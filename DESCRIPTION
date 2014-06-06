@@ -1,0 +1,25 @@
+Package: rdrobust
+Type: Package
+Title: Robust data-driven statistical inference in
+        Regression-Discontinuity designs
+Version: 0.5
+Date: 2014-06-06
+Author: Sebastian Calonico <calonico@umich.edu>, Matias D. Cattaneo 
+	<cattaneo@umich.edu>, Rocio Titiunik <titiunik@umich.edu>
+Maintainer: Sebastian Calonico <calonico@umich.edu>
+Description: Regression-discontinuity (RD) designs are quasi-experimental 
+	research designs popular in social, behavioral and natural sciences. 
+	The RD design is usually employed to study the (local) causal effect 
+	of a treatment, intervention or policy. This package provides tools 
+	for data-driven graphical and analytical statistical inference in RD
+	designs: rdrobust to construct local-polynomial point estimators 
+	and robust confidence intervals for average treatment effects at the 
+	cutoff in Sharp, Fuzzy and Kink RD settings, rdbwselect to perform 
+	bandwidth selection for the different procedures implemented, and 
+	rdbinselect to conduct exploratory data analysis (RD plots).
+Depends: R (>= 3.0.2)
+License: GPL-2
+Packaged: 2014-06-08 00:35:40 UTC; Sebastian
+NeedsCompilation: no
+Repository: CRAN
+Date/Publication: 2014-06-08 12:35:04

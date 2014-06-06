@@ -1,0 +1,13 @@
+5b64968adcb9cb4b36201a9878f02c8a *DESCRIPTION
+df390c53434517b304ac5db487184641 *NAMESPACE
+e9b953a612299c6f0663a344b68a03ea *R/functions.R
+e982281fcb51d11889dc9179fa781aa2 *R/rdbinselect.R
+8bc6eabb081eb10680a97da2fd50c60a *R/rdbwselect.R
+f8782b733c23a7d752e0bd33002e94ba *R/rdrobust.R
+80860397cd21fb1497c6106961b33bce *data/rdrobust_RDsenate.rda
+05f5441427516e0b6788143126e807d8 *man/rdbinselect.Rd
+ac1e09baba1b790e4041210dc56c7a6b *man/rdbwselect.Rd
+8006d9a7b803d76ba67dfae2ef8d33b3 *man/rdrobust-internal.Rd
+2a186e2d3c49de216c880edf08fbb2e9 *man/rdrobust-package.Rd
+1f77b976ba3e6bcf2ebf4670a1ce581a *man/rdrobust.Rd
+9f9fec484950a6c2384f9307196e3d74 *man/rdrobust_RDsenate.Rd
