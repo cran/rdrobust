@@ -2,8 +2,9 @@
 ### version 0.2  26Nov2013
 ### version 0.3  21Abr2014
 ### version 0.5  06Jun2014
+### version 0.6  17Jun2014
 
-rdrobust = function(y, x,  data, subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NULL, h=NULL, b=NULL, rho=NULL, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, level=95, all=FALSE, model = FALSE, frame = FALSE) {
+rdrobust = function(y, x,  data, subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NULL, h=NULL, b=NULL, rho=NULL, scalepar=1, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, level=95, all=FALSE, model = FALSE, frame = FALSE) {
   
   call <- match.call()
   if (missing(data)) 
@@ -271,13 +272,13 @@ rdrobust = function(y, x,  data, subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NU
   
   V_l_cl = factorial(deriv)^2*V_lp[deriv+1,deriv+1] 
   V_r_cl = factorial(deriv)^2*V_rp[deriv+1,deriv+1]  
-  V_cl   = V_l_cl + V_r_cl 
-  V_l_rb = V_l_cl + factorial(p+1)^2*V_lq[p+2,p+2]*(BiasConst_lp[deriv+1]*h^(p+1-deriv)/factorial(p+1))^2 - 2*factorial(deriv)*factorial(p+1)*Cov_l[deriv+1,p+2]*(BiasConst_lp[deriv+1]*h^(p+1-deriv)/factorial(p+1))
-  V_r_rb = V_r_cl + factorial(p+1)^2*V_rq[p+2,p+2]*(BiasConst_rp[deriv+1]*h^(p+1-deriv)/factorial(p+1))^2 - 2*factorial(deriv)*factorial(p+1)*Cov_r[deriv+1,p+2]*(BiasConst_rp[deriv+1]*h^(p+1-deriv)/factorial(p+1))
-  V_rb = V_l_rb + V_r_rb
+  V_l_rb = factorial(deriv)^2*V_lp[deriv+1,deriv+1] + factorial(p+1)^2*V_lq[p+2,p+2]*(BiasConst_lp[deriv+1]*h^(p+1-deriv)/factorial(p+1))^2 - 2*factorial(deriv)*factorial(p+1)*Cov_l[deriv+1,p+2]*(BiasConst_lp[deriv+1]*h^(p+1-deriv)/factorial(p+1))
+  V_r_rb = factorial(deriv)^2*V_rp[deriv+1,deriv+1] + factorial(p+1)^2*V_rq[p+2,p+2]*(BiasConst_rp[deriv+1]*h^(p+1-deriv)/factorial(p+1))^2 - 2*factorial(deriv)*factorial(p+1)*Cov_r[deriv+1,p+2]*(BiasConst_rp[deriv+1]*h^(p+1-deriv)/factorial(p+1))
+  V_cl   = scalepar^2*(V_l_cl + V_r_cl)
+  V_rb   = scalepar^2*(V_l_rb + V_r_rb)
     
-  tau_Y = c(tau_rp[deriv+1,1] - tau_lp[deriv+1,1], tau_rp[deriv+1,1] - tau_lp[deriv+1,1] - Bias_tau,tau_rp[deriv+1,1] - tau_lp[deriv+1,1] - Bias_tau)
-  se_Y = c(sqrt(V_cl),sqrt(V_cl),sqrt(V_rb))
+  tau_Y = c(scalepar*(tau_rp[deriv+1,1] - tau_lp[deriv+1,1]), scalepar*(tau_rp[deriv+1,1] - tau_lp[deriv+1,1] - Bias_tau), scalepar*(tau_rp[deriv+1,1] - tau_lp[deriv+1,1] - Bias_tau))
+  se_Y  = c(sqrt(V_cl),sqrt(V_cl),sqrt(V_rb))
   t_Y  =  tau_Y/se_Y
   pv_Y = 2*pnorm(-abs(t_Y))
   ci_Y = matrix(NA,nrow=3,ncol=2)

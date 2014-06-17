@@ -12,8 +12,8 @@
     A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014c).
 }
 \usage{rdrobust(y, x, data, subset = NULL, c = 0,  p = 1, q = 2, deriv = 0, 
-            fuzzy = NULL, h = NULL, b = NULL, rho = NULL, kernel = "tri", 
-            bwselect = "CCT", scaleregul = 1, delta = 0.5, 
+            fuzzy = NULL, h = NULL, b = NULL, rho = NULL, scalepar = 1,
+            kernel = "tri", bwselect = "CCT",  scaleregul = 1, delta = 0.5, 
             cvgrid_min = NULL, cvgrid_max = NULL, cvgrid_length = NULL, 
             cvplot = FALSE, vce = "nn", matches = 3, level = 95,
             all = FALSE, model = FALSE, frame = FALSE)}
@@ -29,10 +29,13 @@
   \item{fuzzy}{specifies the treatment status variable used to implement Fuzzy RD estimation (or Fuzzy Kink RD if \code{deriv = 1} is also specified).
 Default is Sharp RD design and hence this option is not used. 
 \emph{Note}: For fuzzy RD designs, bandwidths are estimated using sharp RD bandwidth selectors for the reduced form outcome equation.}
-  \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
+
   \item{h}{directly sets the main bandwidth. If not specified, it is computed by the companion command \code{\link{rdbwselect}}.}
   \item{b}{directly sets the pilot bandwidth. If not specified, it is computed by the companion command \code{\link{rdbwselect}}.}
   \item{rho}{sets the value of \code{rho}, so that the pilot bandwidth \code{b} equals \code{h/rho}. Default is \code{rho = 1} if \code{h} is specified but \code{b} is not.}
+    \item{scalepar}{specifies scaling factor for RD parameter of interest. This option is useful when the population parameter of interest involves a known multiplicative factor (e.g., sharp kink RD).  Default is \code{scalepar = 1} (no scaling).}
+    \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
+    
   \item{bwselect}{selects the bandwidth selection procedure to be used. By default it computes both \code{h} and \code{b}, unless \code{rho} is specified, in which case it only computes \code{h} and sets \code{b} = \code{h/rho}. Options are:
   
   \code{CCT} for bandwidth selector proposed by Calonico, Cattaneo and Titiunik (2014a)  (default option).
@@ -40,6 +43,7 @@ Default is Sharp RD design and hence this option is not used.
   \code{IK} for bandwidth selector proposed by Imbens and Kalyanaraman (2012) (only available for Sharp RD design).
   
   \code{CV} for cross-validation method proposded by Ludwig and Miller (2007) (only available for Sharp RD design).}
+  
   \item{scaleregul}{specifies scaling factor for the regularization terms of \code{CCT} and \code{IK} bandwidth selectors. Setting \code{scaleregul = 0} removes the regularization term from the bandwidth selectors; default is \code{scaleregul = 1}.}
 
   \item{delta}{sets the quantile that defines the sample used in the cross-validation procedure. This option is used only  if \code{bwselect(CV)} is specified. See companion command \code{\link{rdbwselect}} for more details; default is \code{delta = 0.5}, that is, the median of the control and treated samples.}

@@ -2,6 +2,7 @@
 ### version 0.2  26Nov2013
 ### version 0.3  21Abr2014
 ### version 0.5  06Jun2014
+### version 0.6  17Jun2014
 
 rdbinselect = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL, 
                           binselect="es", lowerend=NULL, upperend=NULL, scale=1,

@@ -2,6 +2,7 @@
 ### version 0.2  26Nov2013
 ### version 0.3  21Abr2014
 ### version 0.5  06Jun2014
+### version 0.6  17Jun2014
 
 rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NULL, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, all=FALSE, precalc=TRUE, model = FALSE, frame = FALSE){
   
@@ -51,7 +52,6 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
       q = p+1
     }
     
-    precct=0
     exit=0
     #################  ERRORS
     if (kernel!="uni" & kernel!="uniform" & kernel!="tri" & kernel!="triangular" & kernel!="epa" & kernel!="epanechnikov" & kernel!="" ){
@@ -125,12 +125,15 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
   
   if (kernel=="epanechnikov" | kernel=="epa") {
     kernel_type = "Epanechnikov"
+    C_pilot=2.34
   }
   else if (kernel=="uniform" | kernel=="uni") {
     kernel_type = "Uniform"
+    C_pilot=1.84
   }
   else  {
     kernel_type = "Triangular"
+    C_pilot=2.58
   }
   
   p1 = p+1;  p2 = p+2;  q1 = q+1;  q2 = q+2;  q3 = q+3  
@@ -144,74 +147,77 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
   ct3 = bwconst(q1,q1,kernel)
   C1_q = ct3[1];  C2_q = ct3[2]
   
+  
   #***********************************************************************
   #**************************** CCT Approach
   #***********************************************************************
   if (bwselect=="CCT" | all==TRUE) {
     #print("Computing CCT Bandwidth Selector.")
+    
     #### Step 1: q_CCT
-    h_pilot_cct = 2.576*min(sd(x),IQR(x))*N^(-1/5)
-    X_lq2 = matrix(c((X_l-c)^0, poly(X_l-c,degree=(q3-1),raw=T)),length(X_l),q3)
-    X_rq2 = matrix(c((X_r-c)^0, poly(X_r-c,degree=(q3-1),raw=T)),length(X_r),q3)
+    h_pilot_cct = C_pilot*min(sd(x),IQR(x)/1.349)*N^(-1/5)
+    X_lq2 = matrix(c((X_l-c)^0, poly(X_l-c, degree = q+2, raw=T)), length(X_l), q+3)
+    X_rq2 = matrix(c((X_r-c)^0, poly(X_r-c, degree = q+2, raw=T)), length(X_r), q+3)
+    w_pilot_l = kweight(X_l, c, h_pilot_cct, kernel)
+    w_pilot_r = kweight(X_r, c, h_pilot_cct, kernel)
+    Y_pilot_l = Y_l[w_pilot_l>0]; X_pilot_l = X_l[w_pilot_l>0]; w_pilot_l = w_pilot_l[w_pilot_l>0]
+    Y_pilot_r = Y_r[w_pilot_r>0]; X_pilot_r = X_r[w_pilot_r>0]; w_pilot_r = w_pilot_r[w_pilot_r>0]
+    sigma_l_pilot = c(rdvce(X = X_pilot_l, y = Y_pilot_l, p = p, h = h_pilot_cct, matches = matches, vce = vce, kernel = kernel))
+    sigma_r_pilot = c(rdvce(X = X_pilot_r, y = Y_pilot_r, p = p, h = h_pilot_cct, matches = matches, vce = vce, kernel = kernel))
+    # V_m3
+    X_l_pilot_q1 =  matrix(c((X_pilot_l-c)^0, poly(X_pilot_l-c, degree = q+1, raw=T)), length(X_pilot_l), q+2)
+    X_r_pilot_q1 =  matrix(c((X_pilot_r-c)^0, poly(X_pilot_r-c, degree = q+1, raw=T)), length(X_pilot_r), q+2)
+    out.lq1 = qr.reg(x = X_l_pilot_q1, y = Y_pilot_l, w = w_pilot_l, s2 = sigma_l_pilot) 
+    out.rq1 = qr.reg(x = X_r_pilot_q1, y = Y_pilot_r, w = w_pilot_r, s2 = sigma_r_pilot) 
+    V_m3_pilot_cct = out.lq1$Sigma.hat[q+2,q+2]+ out.rq1$Sigma.hat[q+2,q+2]
+    # V_m2
+    X_l_pilot_q  =  X_l_pilot_q1[,1:(q+1)];  X_r_pilot_q  =  X_r_pilot_q1[,1:(q+1)]
+    out.lq = qr.reg(x = X_l_pilot_q, y = Y_pilot_l, w = w_pilot_l, s2 = sigma_l_pilot) 
+    out.rq = qr.reg(x = X_r_pilot_q, y = Y_pilot_r, w = w_pilot_r, s2 = sigma_r_pilot) 
+    V_m2_pilot_cct = out.lq$Sigma.hat[q+1,q+1] + out.rq$Sigma.hat[q+1,q+1] 
+    # V_m0
+    X_l_pilot_p  =  X_l_pilot_q1[,1:(p+1)];  X_r_pilot_p  =  X_r_pilot_q1[,1:(p+1)]
+    out.lp = qr.reg(x = X_l_pilot_p, y = Y_pilot_l, w = w_pilot_l, s2 = sigma_l_pilot) 
+    out.rp = qr.reg(x = X_r_pilot_p, y = Y_pilot_r, w = w_pilot_r, s2 = sigma_r_pilot) 
+    V_m0_pilot_cct = out.lp$Sigma.hat[deriv+1,deriv+1]+ out.rp$Sigma.hat[deriv+1,deriv+1]
+    # Num/Den
     m4_l_pilot_cct = qr.coef(qr(X_lq2, tol = 1e-10), Y_l)[q3]
     m4_r_pilot_cct = qr.coef(qr(X_rq2, tol = 1e-10), Y_r)[q3]
-    w_hpilot_l = kweight(X_l, c, h_pilot_cct, kernel)
-    w_hpilot_r = kweight(X_r, c, h_pilot_cct, kernel)
-    Yh_l = Y_l[w_hpilot_l>0]; Xh_l = X_l[w_hpilot_l>0]; w_hpilot_l = w_hpilot_l[w_hpilot_l>0]
-    Yh_r = Y_r[w_hpilot_r>0]; Xh_r = X_r[w_hpilot_r>0]; w_hpilot_r = w_hpilot_r[w_hpilot_r>0]
-    sigma_l_pilot = c(rdvce(X=Xh_l, y=Yh_l, p=p, h=h_pilot_cct, matches=matches, vce=vce, kernel=kernel))
-    sigma_r_pilot = c(rdvce(X=Xh_r, y=Yh_r, p=p, h=h_pilot_cct, matches=matches, vce=vce, kernel=kernel))
-    X_lq1  = matrix(c((Xh_l-c)^0,poly(Xh_l-c,degree=q+1,raw=T)),length(Xh_l),q+2)
-    X_rq1  = matrix(c((Xh_r-c)^0,poly(Xh_r-c,degree=q+1,raw=T)),length(Xh_r),q+2)
-    X_lq  =  matrix(c((Xh_l-c)^0,poly(Xh_l-c,degree=q, raw=T)), length(Xh_l),q+1)
-    X_rq  =  matrix(c((Xh_r-c)^0,poly(Xh_r-c,degree=q, raw=T)), length(Xh_r),q+1)
-    X_lp  =  matrix(c((Xh_l-c)^0,poly(Xh_l-c,degree=p, raw=T)), length(Xh_l),p+1)
-    X_rp  =  matrix(c((Xh_r-c)^0,poly(Xh_r-c,degree=p, raw=T)), length(Xh_r),p+1)
-    out.lq1=qr.reg(x=X_lq1, y=Yh_l, w=w_hpilot_l, s2=sigma_l_pilot) 
-    out.rq1=qr.reg(x=X_rq1, y=Yh_r, w=w_hpilot_r, s2=sigma_r_pilot) 
-    V_m3_hpilot_cct = out.lq1$Sigma.hat[q+2,q+2]+ out.rq1$Sigma.hat[q+2,q+2]
-    out.lq=qr.reg(x=X_lq, y=Yh_l, w=w_hpilot_l, s2=sigma_l_pilot) 
-    out.rq=qr.reg(x=X_rq, y=Yh_r, w=w_hpilot_r, s2=sigma_r_pilot) 
-    V_m2_hpilot_cct   = out.lq$Sigma.hat[q+1,q+1] + out.rq$Sigma.hat[q+1,q+1] 
-    out.lp=qr.reg(x=X_lp, y=Yh_l, w=w_hpilot_l, s2=sigma_l_pilot) 
-    out.rp=qr.reg(x=X_rp, y=Yh_r, w=w_hpilot_r, s2=sigma_r_pilot) 
-    V_m0_hpilot_cct   = out.lp$Sigma.hat[deriv+1,deriv+1]+ out.rp$Sigma.hat[deriv+1,deriv+1]
-    N_q_cct=(2*q+3)*N*h_pilot_cct^(2*q+3)*V_m3_hpilot_cct
-    D_q_cct=2*(C1_q*(m4_r_pilot_cct-(-1)^(deriv+q)*m4_l_pilot_cct))^2
-    q_CCT=(N_q_cct/(N*D_q_cct))^(1/(2*q+5))
+    D_q_cct = 2*(C1_q*(m4_r_pilot_cct - (-1)^(deriv+q)*m4_l_pilot_cct))^2
+    N_q_cct = (2*q+3)*N*h_pilot_cct^(2*q+3)*V_m3_pilot_cct
+    q_CCT = (N_q_cct/(N*D_q_cct))^(1/(2*q+5))
     
     ### Step 2: b_CCT
-    w_q_l=kweight(X_l,c,q_CCT,kernel);w_q_r=kweight(X_r,c,q_CCT,kernel)
-    Yh_l  = Y_l[w_q_l>0];  Yh_r  = Y_r[w_q_r>0];    Xh_l  = X_l[w_q_l>0];  Xh_r  = X_r[w_q_r>0]
-    w_q_l = w_q_l[w_q_l>0]; w_q_r = w_q_r[w_q_r>0]
-    sigma_l_pilot = c(rdvce(X=Xh_l, y=Yh_l, p=p, h=h_pilot_cct, matches=matches, vce=vce, kernel=kernel))
-    sigma_r_pilot = c(rdvce(X=Xh_r, y=Yh_r, p=p, h=h_pilot_cct, matches=matches, vce=vce, kernel=kernel))
-    X_lq1  = matrix(c((Xh_l-c)^0,poly(Xh_l-c,degree=q+1,raw=T)),length(Xh_l),q+2)
-    X_rq1  = matrix(c((Xh_r-c)^0,poly(Xh_r-c,degree=q+1,raw=T)),length(Xh_r),q+2)
-    out.lq1=qr.reg(x=X_lq1, y=Yh_l, w=w_q_l, s2=sigma_l_pilot) 
-    out.rq1=qr.reg(x=X_rq1, y=Yh_r, w=w_q_r, s2=sigma_r_pilot) 
-    V_m3_q_cct   = out.lq1$Sigma.hat[q+2,q+2]+ out.rq1$Sigma.hat[q+2,q+2]
-    m3_l_cct = out.lq1$beta[q2]; m3_r_cct = out.rq1$beta[q2] 
-    N_b_cct=  (2*p+3)*N*h_pilot_cct^(2*p+3)*V_m2_hpilot_cct
-    D_b_cct=  2*(q-p)*(C1_b*(m3_r_cct - (-1)^(deriv+q+1)*m3_l_cct))^2
-    R_b_cct=  scaleregul*2*(q-p)*(C1_b)^2*3*V_m3_q_cct
-    b_CCT= (N_b_cct / (N*(D_b_cct+R_b_cct)))^(1/(2*q+3))
-  
-    
+    w_q_l=kweight(X_l,c,q_CCT,kernel); w_q_r=kweight(X_r,c,q_CCT,kernel)
+    Y_q_l = Y_l[w_q_l>0];  Y_q_r = Y_r[w_q_r>0]; X_q_l = X_l[w_q_l>0]; X_q_r = X_r[w_q_r>0]; w_q_l = w_q_l[w_q_l>0]; w_q_r = w_q_r[w_q_r>0]
+    sigma_l_pilot = c(rdvce(X = X_q_l, y = Y_q_l, p = p, h = h_pilot_cct, matches = matches, vce = vce, kernel = kernel))
+    sigma_r_pilot = c(rdvce(X = X_q_r, y = Y_q_r, p = p, h = h_pilot_cct, matches = matches, vce = vce, kernel = kernel))
+    X_q1_l  = matrix(c((X_q_l-c)^0, poly(X_q_l-c, degree = q+1, raw = T)), length(X_q_l), q+2)
+    X_q1_r  = matrix(c((X_q_r-c)^0, poly(X_q_r-c, degree = q+1, raw = T)), length(X_q_r), q+2)
+    out.lq1 = qr.reg(x = X_q1_l, y = Y_q_l, w = w_q_l, s2 = sigma_l_pilot) 
+    out.rq1 = qr.reg(x = X_q1_r, y = Y_q_r, w = w_q_r, s2 = sigma_r_pilot) 
+    V_m3_q_cct = out.lq1$Sigma.hat[q+2,q+2]+ out.rq1$Sigma.hat[q+2,q+2]
+    m3_l_cct   = out.lq1$beta[q+2]; m3_r_cct = out.rq1$beta[q+2]
+    # Num/Den
+    D_b_cct = 2*(q-p)*(C1_b*(m3_r_cct - (-1)^(deriv+q+1)*m3_l_cct))^2
+    R_b_cct = scaleregul*2*(q-p)*C1_b^2*3*V_m3_q_cct
+    N_b_cct = (2*p+3)*N*h_pilot_cct^(2*p+3)*V_m2_pilot_cct
+    b_CCT = (N_b_cct / (N*(D_b_cct+R_b_cct)))^(1/(2*q+3))
+      
     ### Step 3: h_CCT
-    w_b_l = kweight(X_l,c,b_CCT,kernel);w_b_r = kweight(X_r,c,b_CCT,kernel)
-    Yh_l=Y_l[w_b_l>0];  Yh_r=Y_r[w_b_r>0];  Xh_l=X_l[w_b_l>0];  Xh_r=X_r[w_b_r>0];w_b_l=w_b_l[w_b_l>0]; w_b_r=w_b_r[w_b_r>0]
-    sigma_l_pilot = c(rdvce(X=Xh_l, y=Yh_l, p=p, h=h_pilot_cct, matches=matches, vce=vce, kernel=kernel))
-    sigma_r_pilot = c(rdvce(X=Xh_r, y=Yh_r, p=p, h=h_pilot_cct, matches=matches, vce=vce, kernel=kernel))
-    X_lq  = matrix(c((Xh_l-c)^0,poly(Xh_l-c,degree=q,raw=T)),length(Xh_l),q+1)
-    X_rq  = matrix(c((Xh_r-c)^0,poly(Xh_r-c,degree=q,raw=T)),length(Xh_r),q+1)
-    out.lq=qr.reg(x=X_lq, y=Yh_l, w=w_b_l, s2=sigma_l_pilot) 
-    out.rq=qr.reg(x=X_rq, y=Yh_r, w=w_b_r, s2=sigma_r_pilot) 
-    V_m2_b_cct=out.lq$Sigma.hat[p2,p2] + out.rq$Sigma.hat[p2,p2] 
-    m2_l_cct=out.lq$beta[p2];  m2_r_cct=out.rq$beta[p2] 
-    N_h_cct = (2*deriv+1)*N*h_pilot_cct^(2*deriv+1)*V_m0_hpilot_cct
+    w_b_l = kweight(X_l,c,b_CCT,kernel); w_b_r = kweight(X_r,c,b_CCT,kernel)
+    Y_b_l=Y_l[w_b_l>0];  Y_b_r=Y_r[w_b_r>0];  X_b_l=X_l[w_b_l>0];  X_b_r=X_r[w_b_r>0];w_b_l=w_b_l[w_b_l>0]; w_b_r=w_b_r[w_b_r>0]
+    sigma_l_pilot = c(rdvce(X = X_b_l, y = Y_b_l, p = p, h = h_pilot_cct, matches = matches, vce = vce, kernel = kernel))
+    sigma_r_pilot = c(rdvce(X = X_b_r, y = Y_b_r, p = p, h = h_pilot_cct, matches = matches, vce = vce, kernel = kernel))
+    X_q_l  = matrix(c((X_b_l-c)^0, poly(X_b_l-c, degree = q, raw = T)), length(X_b_l), q+1)
+    X_q_r  = matrix(c((X_b_r-c)^0, poly(X_b_r-c, degree = q, raw = T)), length(X_b_r), q+1)
+    out.lq = qr.reg(x = X_q_l, y = Y_b_l, w = w_b_l, s2 = sigma_l_pilot) 
+    out.rq = qr.reg(x = X_q_r, y = Y_b_r, w = w_b_r, s2 = sigma_r_pilot) 
+    V_m2_b_cct = out.lq$Sigma.hat[p+2,p+2] + out.rq$Sigma.hat[p+2,p+2] 
+    m2_l_cct   = out.lq$beta[p+2];  m2_r_cct=out.rq$beta[p+2] 
     D_h_cct = 2*(p+1-deriv)*(C1_h*(m2_r_cct - (-1)^(deriv+p+1)*m2_l_cct))^2
-    R_h_cct = scaleregul*2*(p+1-deriv)*(C1_h)^2*3*V_m2_b_cct
+    R_h_cct = scaleregul*2*(p+1-deriv)*C1_h^2*3*V_m2_b_cct
+    N_h_cct = (2*deriv+1)*N*h_pilot_cct^(2*deriv+1)*V_m0_pilot_cct
     h_CCT = (N_h_cct / (N*(D_h_cct+R_h_cct)))^(1/(2*p+3))
     
     if (b_calc==0) {
@@ -228,6 +234,11 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
   #**************************************************************************************************
   if (bwselect=="IK" | all==TRUE) {
 
+    ct2 = bwconst(q,q,"uni")
+    C1_b_uni = ct2[1];  C2_b_uni = ct2[2]
+    ct3 = bwconst(q1,q1,"uni")
+    C1_q_uni = ct3[1];  C2_q_uni = ct3[2]
+    
     X_lq2 = matrix(c((X_l-c)^0, poly(X_l-c,degree=(q3-1),raw=T)),length(X_l),q3)
     X_rq2 = matrix(c((X_r-c)^0, poly(X_r-c,degree=(q3-1),raw=T)),length(X_r),q3)
     X_lq1 = X_lq2[,1:q2];  X_rq1 = X_rq2[,1:q2]
@@ -236,18 +247,15 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
     
     #print("Computing IK Bandwidth Selector.")
     h_pilot_IK = 1.84*sd(x)*N^(-1/5)
-    temp=X_l[X_l>=c-h_pilot_IK]
-    n_l_h1 = length(temp)
-    temp=X_r[X_r<=c+h_pilot_IK]
-    n_r_h1 = length(temp)
+    n_l_h1 = length(X_l[X_l>=c-h_pilot_IK])
+    n_r_h1 = length(X_r[X_r<=c+h_pilot_IK])
     f0_pilot=(n_r_h1+n_l_h1)/(2*N*h_pilot_IK)
-    temp=Y_l[X_l>=c-h_pilot_IK]
-    s2_l_pilot = var(temp)
+
+    s2_l_pilot = var(Y_l[X_l>=c-h_pilot_IK])
+    s2_r_pilot = var(Y_r[X_r<=c+h_pilot_IK])
     if (s2_l_pilot==0){
       s2_l_pilot=var(Y_l[X_l>=c-2*h_pilot_IK])
     }
-    temp=Y_r[X_r<=c+h_pilot_IK]
-    s2_r_pilot = var(temp)
     if (s2_r_pilot==0){
       s2_r_pilot=var(Y_r[X_r<=c+2*h_pilot_IK])
     }
@@ -257,61 +265,68 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
     Vm2_pilot_IK = C2_b*V_IK_pilot
     Vm3_pilot_IK = C2_q*V_IK_pilot
     
-    x_IK_sort_l = X_l[X_l>=median(X_l)]; y_IK_sort_l = Y_l[X_l>=median(X_l)]
-    x_IK_sort_r = X_r[X_r<=median(X_r)]; y_IK_sort_r = Y_r[X_r<=median(X_r)]
-    x_IK_sort = c(x_IK_sort_r,x_IK_sort_l); y_IK_sort = c(y_IK_sort_r,y_IK_sort_l)
-    sample_IK = length(x_IK_sort)
-    X_IK_q2 = matrix(c((x_IK_sort-c)^0, poly(x_IK_sort-c,degree=(q3-1),raw=T)),sample_IK,q3)
-    X_IK_q1 = X_IK_q2[,1:q2]
+    x_IK_med_l = X_l[X_l>=median(X_l)]; y_IK_med_l = Y_l[X_l>=median(X_l)]
+    x_IK_med_r = X_r[X_r<=median(X_r)]; y_IK_med_r = Y_r[X_r<=median(X_r)]
+    x_IK_med = c(x_IK_med_r,x_IK_med_l); y_IK_med = c(y_IK_med_r,y_IK_med_l)
+    sample_IK = length(x_IK_med)
+    X_IK_med_q2 = matrix(c((x_IK_med-c)^0, poly(x_IK_med-c,degree=(q3-1),raw=T)),sample_IK,q3)
+    X_IK_med_q1 = X_IK_med_q2[,1:q2]
+    X_IK_med_q2=cbind(X_IK_med_q2,1*(x_IK_med>=c))
+    X_IK_med_q1=cbind(X_IK_med_q1,1*(x_IK_med>=c))
     
     ### First Stage
-    m4_l_pilot_IK = m4_r_pilot_IK = qr.coef(qr(X_IK_q2, tol = 1e-10), y_IK_sort)[q+3]
-    N_q_r_pilot_IK = (2*q1+1)*C2_q*(s2_r_pilot/f0_pilot)
-    N_q_l_pilot_IK = (2*q1+1)*C2_q*(s2_l_pilot/f0_pilot)
-    D_q_r_pilot_IK = 2*(q1+1-q1)*(C1_q*m4_r_pilot_IK)^2
-    D_q_l_pilot_IK = 2*(q1+1-q1)*(C1_q*m4_l_pilot_IK)^2
-    h3_r_pilot_IK = (N_q_r_pilot_IK / (N_r*D_q_r_pilot_IK))^(1/(2*q+5))
-    h3_l_pilot_IK = (N_q_l_pilot_IK / (N_l*D_q_l_pilot_IK))^(1/(2*q+5))
-    temp=X_l[X_l>=c-h3_l_pilot_IK];    n_l_h3 = length(temp)
-    temp=X_r[X_r<=c+h3_r_pilot_IK];    n_r_h3 = length(temp)
-    w_h3_l = kweight(X_l,c,h3_l_pilot_IK,"uni")
-    w_h3_r = kweight(X_r,c,h3_r_pilot_IK,"uni")
-    m3_l_IK=qr.reg(x=X_lq1, y=Y_l, w=w_h3_l,var.comp=FALSE)$beta[q2]
-    m3_r_IK=qr.reg(x=X_rq1, y=Y_r, w=w_h3_r,var.comp=FALSE)$beta[q2]
-    N_b_IK = (2*p1+1)*Vm2_pilot_IK
+    N_b_IK = (2*p+3)*Vm2_pilot_IK
+    # Pilot Bandwidth
+    N_q_r_pilot_IK = (2*q+3)*C2_q_uni*(s2_r_pilot/f0_pilot)
+    N_q_l_pilot_IK = (2*q+3)*C2_q_uni*(s2_l_pilot/f0_pilot)
+    m4_pilot_IK = qr.coef(qr(X_IK_med_q2, tol = 1e-10), y_IK_med)[q+3]
+    D_q_pilot_IK = 2*(C1_q_uni*m4_pilot_IK)^2
+    h3_r_pilot_IK = (N_q_r_pilot_IK / (N_r*D_q_pilot_IK))^(1/(2*q+5))
+    h3_l_pilot_IK = (N_q_l_pilot_IK / (N_l*D_q_pilot_IK))^(1/(2*q+5))
+    # Derivative
+    X_lq_IK_h3=X_lq1[X_l>=c-h3_l_pilot_IK,]; Y_l_IK_h3 =Y_l[X_l>=c-h3_l_pilot_IK]
+    X_rq_IK_h3=X_rq1[X_r<=c+h3_r_pilot_IK,]; Y_r_IK_h3 =Y_r[X_r<=c+h3_r_pilot_IK]
+    m3_l_IK=qr.coef(qr(X_lq_IK_h3, tol = 1e-10), Y_l_IK_h3)[q2]
+    m3_r_IK=qr.coef(qr(X_rq_IK_h3, tol = 1e-10), Y_r_IK_h3)[q2]
     D_b_IK = 2*(q-p)*(C1_b*(m3_r_IK - (-1)^(deriv+q+1)*m3_l_IK))^2
+    # Regularization
+    n_l_h3 = length(Y_l_IK_h3);n_r_h3 = length(Y_r_IK_h3)
     temp = regconst(q1,1);    con = temp[q2,q2]
     r_l_b = (con*s2_l_pilot)/(n_l_h3*h3_l_pilot_IK^(2*q1))
     r_r_b = (con*s2_r_pilot)/(n_r_h3*h3_r_pilot_IK^(2*q1))
-    Vm3_pilot_IK1 = (r_l_b + r_r_b)
-    R_b_IK = scaleregul*2*(q-p)*(C1_b)^2*3*Vm3_pilot_IK1
+    R_b_IK = scaleregul*2*(q-p)*(C1_b)^2*3*(r_l_b + r_r_b)
+    # Final Bandwidth
     b_IK   = (N_b_IK / (N*(D_b_IK+R_b_IK)))^(1/(2*q+3))
     
     ### Second Stage
-    m3_l_pilot_IK = m3_r_pilot_IK = qr.coef(qr(X_IK_q1, tol = 1e-10), y_IK_sort)[q2]
-    N_b_r_pilot_IK = (2*p1+1)*C2_b*(s2_r_pilot/f0_pilot)
-    N_b_l_pilot_IK = (2*p1+1)*C2_b*(s2_l_pilot/f0_pilot)
-    D_b_r_pilot_IK = 2*(q-p)*(C1_b*m3_r_pilot_IK)^2
-    D_b_l_pilot_IK = 2*(q-p)*(C1_b*m3_l_pilot_IK)^2
-    h2_l_pilot_IK  = (N_b_l_pilot_IK / (N_l*D_b_l_pilot_IK))^(1/(2*q+3))
-    h2_r_pilot_IK  = (N_b_r_pilot_IK / (N_r*D_b_r_pilot_IK))^(1/(2*q+3))
-    w_h2_l = kweight(X_l,c, h2_l_pilot_IK, "uni")
-    w_h2_r = kweight(X_r,c, h2_r_pilot_IK, "uni")
-    m2_l_IK=qr.reg(x=X_lq, y=Y_l, w=w_h2_l,var.comp=FALSE)$beta[p2]
-    m2_r_IK=qr.reg(x=X_rq, y=Y_r, w=w_h2_r,var.comp=FALSE)$beta[p2]
-    temp=X_l[X_l>=c-h2_l_pilot_IK]; n_l_h2 = length(temp)
-    temp=X_r[X_r<=c+h2_r_pilot_IK]; n_r_h2 = length(temp)
+    N_h_IK = (2*deriv+1)*Vm0_pilot_IK
+    # Pilot
+    N_b_r_pilot_IK = (2*p1+1)*C2_b_uni*(s2_r_pilot/f0_pilot)
+    N_b_l_pilot_IK = (2*p1+1)*C2_b_uni*(s2_l_pilot/f0_pilot)    
+    m3_pilot_IK = qr.coef(qr(X_IK_med_q1, tol = 1e-10), y_IK_med)[q2]
+    D_b_pilot_IK = 2*(q-p)*(C1_b_uni*m3_pilot_IK)^2
+    h2_r_pilot_IK  = (N_b_r_pilot_IK / (N_r*D_b_pilot_IK))^(1/(2*q+3))
+    h2_l_pilot_IK  = (N_b_l_pilot_IK / (N_l*D_b_pilot_IK))^(1/(2*q+3))
+    # Derivative
+    X_lq_IK_h2=X_lq[X_l>=c-h2_l_pilot_IK,]; Y_l_IK_h2 =Y_l[X_l>=c-h2_l_pilot_IK]
+    X_rq_IK_h2=X_rq[X_r<=c+h2_r_pilot_IK,]; Y_r_IK_h2 =Y_r[X_r<=c+h2_r_pilot_IK]
+    m2_l_IK=qr.coef(qr(X_lq_IK_h2, tol = 1e-10), Y_l_IK_h2)[p2]
+    m2_r_IK=qr.coef(qr(X_rq_IK_h2, tol = 1e-10), Y_r_IK_h2)[p2]
+    D_h_IK = 2*(p+1-deriv)*(C1_h*(m2_r_IK - (-1)^(deriv+p+1)*m2_l_IK))^2
+    # Regularization
+    n_l_h2 = length(Y_l_IK_h2);n_r_h2 = length(Y_r_IK_h2)
     temp = regconst(p1,1);  con = temp[p2,p2]
     r_l_h = (con*s2_l_pilot)/(n_l_h2*h2_l_pilot_IK^(2*p1))
     r_r_h = (con*s2_r_pilot)/(n_r_h2*h2_r_pilot_IK^(2*p1))
-    N_h_IK = (2*deriv+1)*Vm0_pilot_IK
-    D_h_IK = 2*(p+1-deriv)*(C1_h*(m2_r_IK - (-1)^(deriv+p+1)*m2_l_IK))^2
     R_h_IK = scaleregul*2*(p+1-deriv)*(C1_h)^2*3*(r_l_h + r_r_h)
+    # Final Bandwidth
     h_IK  = (N_h_IK / (N*(D_h_IK+R_h_IK)))^(1/(2*p+3))
     
     #*** DJMC
-    D_b_DM  = sqrt(m3_r_IK^2 + m3_l_IK^2); b_DM = (N_b_IK / (N*(D_b_DM)^2))^(1/(2*q+3))
-    D_h_DM  = sqrt(m2_r_IK^2 + m2_l_IK^2); h_DM = (N_h_IK / (N*(D_h_DM)^2))^(1/(2*p+3))
+    D_b_DM  =       2*(q-p)*C1_b^2*(m3_r_IK^2 + m3_l_IK^2) 
+    D_h_DM  = 2*(p+1-deriv)*C1_h^2*(m2_r_IK^2 + m2_l_IK^2)
+    b_DM = (N_b_IK / (N*D_b_DM))^(1/(2*q+3))
+    h_DM = (N_h_IK / (N*D_h_DM))^(1/(2*p+3))
     
     if (b_calc==0) {
       b_IK = h_IK/rho
@@ -378,12 +393,9 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
     for (v in 1:s_CV) {
       for (k in 0:n_CV_l) {
         ind_l = N_nr_l-k-1
-        x_CV_sort_l = x_sort_l[1:ind_l] 
-        y_CV_sort_l = y_sort_l[1:ind_l] 
+        x_CV_sort_l = x_sort_l[1:ind_l];y_CV_sort_l = y_sort_l[1:ind_l] 
         w_CV_sort_l = kweight(x_CV_sort_l,x_sort_l[ind_l+1],h_CV_seq[v],kernel)
-        x_CV_l = x_CV_sort_l[w_CV_sort_l>0]
-        y_CV_l = y_CV_sort_l[w_CV_sort_l>0]
-        w_CV_l = w_CV_sort_l[w_CV_sort_l>0]
+        x_CV_l = x_CV_sort_l[w_CV_sort_l>0];y_CV_l = y_CV_sort_l[w_CV_sort_l>0];w_CV_l = w_CV_sort_l[w_CV_sort_l>0]
         XX_CV_l = matrix(c((x_CV_l-x_sort_l[ind_l+1])^0, poly(x_CV_l-x_sort_l[ind_l+1],degree=p,raw=T)),length(w_CV_l),p+1)
         y_CV_hat_l = qr.coef(qr(XX_CV_l*sqrt(w_CV_l), tol = 1e-10), sqrt(w_CV_l)*y_CV_l)[1]
         mse_CV_l = (y_sort_l[ind_l+1] - y_CV_hat_l)^2
@@ -391,12 +403,9 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
       }
       for (k in 0:n_CV_r) {
         ind_r = N_nr_r-k-1
-        x_CV_sort_r = x_sort_r[1:ind_r] 
-        y_CV_sort_r = y_sort_r[1:ind_r] 
+        x_CV_sort_r = x_sort_r[1:ind_r];y_CV_sort_r = y_sort_r[1:ind_r] 
         w_CV_sort_r = kweight(x_CV_sort_r,x_sort_r[ind_r+1],h_CV_seq[v],kernel)
-        x_CV_r = x_CV_sort_r[w_CV_sort_r>0]
-        y_CV_r = y_CV_sort_r[w_CV_sort_r>0]
-        w_CV_r = w_CV_sort_r[w_CV_sort_r>0]
+        x_CV_r = x_CV_sort_r[w_CV_sort_r>0];y_CV_r = y_CV_sort_r[w_CV_sort_r>0];w_CV_r = w_CV_sort_r[w_CV_sort_r>0]
         XX_CV_r = matrix(c((x_CV_r - x_sort_r[ind_r+1])^0, poly(x_CV_r-x_sort_r[ind_r+1],degree=p,raw=T)),length(w_CV_r),p+1)
         y_CV_hat_r = qr.coef(qr(XX_CV_r*sqrt(w_CV_r), tol = 1e-10), sqrt(w_CV_r)*y_CV_r)[1]
         mse_CV_r = (y_sort_r[ind_r+1] - y_CV_hat_r)^2
