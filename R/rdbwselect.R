@@ -3,6 +3,7 @@
 ### version 0.3  21Abr2014
 ### version 0.5  06Jun2014
 ### version 0.6  17Jun2014
+### version 0.61 03Sep2014
 
 rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NULL, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, all=FALSE, precalc=TRUE, model = FALSE, frame = FALSE){
   

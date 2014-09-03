@@ -3,6 +3,7 @@
 ### version 0.3  21Abr2014
 ### version 0.5  06Jun2014
 ### version 0.6  17Jun2014
+### version 0.61 03Sep2014
 
 qr.XXinv = function(x, ...) {
   tcrossprod(solve(qr.R(qr(x, tol = 1e-10)), tol = 1e-10))
@@ -70,8 +71,8 @@ rdvce= function(X,y,frd=NULL,p,h,matches,vce,kernel){
 m = matches+1
 n = length(X)
 p1 = p+1
-if (vce=="resid") {
 sigma = matrix(0,n,1)
+if (vce=="resid") {
 	for (k in 1:n) {
 		cutoff = matrix(X[k],n,1)
 		cutoff1 = X[k]
@@ -94,23 +95,21 @@ sigma = matrix(0,n,1)
 	}
 }
 else  {
-y_match_avg = z_match_avg = matrix(NA,n,1)
+#y_match_avg = z_match_avg = matrix(NA,n,1)
 for (k in 1:n) {
 	diffx = abs(X - X[k])
 	m.group = sort(unique(diffx))[2:m]
 	ind = which(diffx %in% m.group)
-	y_match_avg[k] = z_match_avg[k] = mean(y[ind])
-  Ji=length(ind)
-  if (!is.null(frd)) {
-      z_match_avg[k] = mean(frd[ind])
+	y_match_avg = z_match_avg = mean(y[ind])
+  Ji = length(ind)
+	if (is.null(frd)) {
+	  sigma[k] = (Ji/(Ji+1))*(y[k] - y_match_avg)^2
+	} 
+  else if (!is.null(frd)) {
+      z_match_avg = mean(frd[ind])
+      sigma[k] = (Ji/(Ji+1))*(y[k] - y_match_avg)*(frd[k] - z_match_avg)
       }
 	}
-    if (is.null(frd)) {
-        sigma = (Ji/(Ji+1))*(y - y_match_avg)^2
-    } 
-    if (!is.null(frd)) {
-        sigma = (Ji/(Ji+1))*(y - y_match_avg)*(frd - z_match_avg)
-    }
 }
 return(sigma)
 }

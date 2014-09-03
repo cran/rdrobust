@@ -15,7 +15,7 @@
 rdbinselect(y, x, data, subset = NULL, c = 0, p = 4, 
           numbinl = NULL, numbinr = NULL, binselect = "es", 
           lowerend = NULL, upperend = NULL, scale = 1, hide = FALSE, 
-          title = NULL, x.label = NULL, y.label = NULL, 
+          par=NULL, title = NULL, x.label = NULL, y.label = NULL, 
           x.lim = NULL, y.lim = NULL, model = FALSE, frame = FALSE)
 
 }
@@ -45,6 +45,7 @@ rdbinselect(y, x, data, subset = NULL, c = 0, p = 4,
     \item{upperend}{specifies the upper bound for \code{x} to the right of the cutoff. Default is the maximum value in sample.}
     \item{scale}{specifies a multiplicative factor to be used with the optimal numbers of bins selected. Specifically, the number of bins used for the treatment and control groups will be \code{scale}\eqn{\times \hat{J}_+} and \code{scale}\eqn{\times \hat{J}_-}, where \eqn{\hat{J}_\cdot} denotes the estimated optimal numbers of bins originally computed for each group; default is \code{scale = 1}.}
   \item{hide}{logical. If \code{TRUE}, it omits the RD plot; default is \code{hide = FALSE}.}
+  \item{par}{optional graphical parameters.}
   \item{title}{optional title for the RD plot.}
   \item{x.label}{optional label for the x-axis of the RD plot.}
   \item{y.label}{optional label for the y-axis of the RD plot.}
@@ -61,7 +62,7 @@ rdbinselect(y, x, data, subset = NULL, c = 0, p = 4,
 \references{
         Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014a. "Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs." \emph{Econometrica}, forthcoming.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
         
-      Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_JSS.pdf}.
+      Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Rpkg.pdf}.
 
       Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014c. "Robust Data-Driven Inference in the Regression-Discontinuity Design." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
 
@@ -76,7 +77,7 @@ rdbinselect(y, x, data, subset = NULL, c = 0, p = 4,
         
 }
 \author{
-Sebastian Calonico, University of Michigan, Ann Arbor, MI.  \email{calonico@umich.edu}.
+Sebastian Calonico, University of Miami, Coral Gables, FL.  \email{scalonico@bus.miami.edu}.
 
 Matias D. Cattaneo, University of Michigan, Ann Arbor, MI.  \email{cattaneo@umich.edu}.
 

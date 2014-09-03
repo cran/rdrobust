@@ -3,10 +3,11 @@
 ### version 0.3  21Abr2014
 ### version 0.5  06Jun2014
 ### version 0.6  17Jun2014
+### version 0.61 03Sep2014
 
 rdbinselect = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL, 
                           binselect="es", lowerend=NULL, upperend=NULL, scale=1,
-                          hide=FALSE, title=NULL, x.label=NULL, y.label=NULL, 
+                          hide=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
                           x.lim=NULL, y.lim=NULL, model = FALSE, frame = FALSE) {
 
   call <- match.call()
@@ -34,9 +35,9 @@ rdbinselect = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbin
 	x_upp = upperend
 
 	size=sum(x>=x_low & x<=x_upp)
-  x=x[x>=x_low & x<=x_upp]
   y=y[x>=x_low & x<=x_upp]
-
+  x=x[x>=x_low & x<=x_upp]
+  
 	x_l = x[x<c]; x_r = x[x>=c]	
   y_l = y[x<c];	y_r = y[x>=c]
 	x.min = min(x);	x.max = max(x)
@@ -271,7 +272,7 @@ rdbinselect = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbin
   
   if (is.null(title)){
     title="RD Bin Select"
-  }
+  } 
   
   if (is.null(x.label)){
     x.label="X axis"
@@ -288,13 +289,14 @@ rdbinselect = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbin
   if (is.null(y.lim)){
     y.lim=c(min(c(y_l,y_r)),max(c(y_l,y_r)))
   }
+    par=par
     plot(bin_xmean[order(bin_xmean)],bin_ymean[order(bin_xmean)], main=title, xlab=x.label, ylab=y.label, ylim=y.lim, xlim=x.lim, pch=20)
 	  points(x_l[order(x_l)],mu0_p1_l[order(x_l)],type="l") 
 	  points(x_r[order(x_r)],mu0_p1_r[order(x_r)],type="l")  
     abline(v=c)
   }
 
-  if (compute==1) {
+#  if (compute==1) {
     
     
     tabl1.str=matrix(NA,5,2)
@@ -324,7 +326,7 @@ rdbinselect = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbin
     out$call <- match.call()
     class(out) <- "rdbinselect"
     return(out)
-  }
+ # }
 }
 
 #rdbinselect <- function(y,x, ...) UseMethod("rdbinselect")

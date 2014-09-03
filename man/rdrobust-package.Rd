@@ -9,8 +9,8 @@
 \tabular{ll}{
 Package: \tab rdrobust\cr
 Type: \tab Package\cr
-Version: \tab 0.6\cr
-Date: \tab 2014-06-17\cr
+Version: \tab 0.61\cr
+Date: \tab 2014-09-03\cr
 License: \tab GPL-2\cr
 }
 Function for statistical inference: \code{\link{rdrobust}}\cr
@@ -18,7 +18,7 @@ Function for bandwidths selection: \code{\link{rdbwselect}}\cr
 Function for exploratory data analysis (RD plots): \code{\link{rdbinselect}}
 }
 \author{
-Sebastian Calonico, University of Michigan, Ann Arbor, MI.  \email{calonico@umich.edu}.
+Sebastian Calonico, University of Miami, Coral Gables, FL.  \email{scalonico@bus.miami.edu}.
 
 Matias D. Cattaneo, University of Michigan, Ann Arbor, MI.  \email{cattaneo@umich.edu}.
 

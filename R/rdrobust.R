@@ -3,6 +3,7 @@
 ### version 0.3  21Abr2014
 ### version 0.5  06Jun2014
 ### version 0.6  17Jun2014
+### version 0.61 03Sep2014
 
 rdrobust = function(y, x,  data, subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NULL, h=NULL, b=NULL, rho=NULL, scalepar=1, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, level=95, all=FALSE, model = FALSE, frame = FALSE) {
   
