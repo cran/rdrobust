@@ -9,6 +9,8 @@
 
     Calonico, Cattaneo and Titiunik (2014b) provides an introduction to this command. Additional details for conventional approaches to conduct inference in the RD design can be found in Imbens and Lemieux (2008), Lee and Lemieux (2010), Dinardo and Lee (2011), and references therein.
     
+    For data-driven RD plots use the command \code{\link{rdplot}}, which implements the results in Calonico, Cattaneo and Titiunik (2014d).
+    
     A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014c).
 }
 \usage{rdrobust(y, x, data, subset = NULL, c = 0,  p = 1, q = 2, deriv = 0, 
@@ -90,6 +92,8 @@ Default is Sharp RD design and hence this option is not used.
         Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Rpkg.pdf}.
 
         Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014c. "Robust Data-Driven Inference in the Regression-Discontinuity Design." University of Michigan, Department of Economics.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
+        
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014d. "Optimal Data-Driven Regression Discontinuity Plots." University of Michigan, Department of Economics.   \url{http://www-personal.umich.edu/~cattaneo/papers/RD-rdplot.pdf}.
 
     Dinardo, J., and D. S. Lee. 2011. "Program Evaluation and Research Designs." In \emph{Handbook of Labor Economics}, ed. O. Ashenfelter and D. Card, vol. 4A, 463-536. Elsevier Science B.V.
 
@@ -118,5 +122,5 @@ rdrobust(y,x)
 \keyword{ RDD }
 \keyword{ Robust Estimation }
 \seealso{
-  \code{\link{rdbwselect}}, \code{\link{rdbinselect}}
+  \code{\link{rdbwselect}}, \code{\link{rdplot}}
 }
