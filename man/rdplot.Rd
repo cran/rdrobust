@@ -2,29 +2,27 @@
 \alias{rdplot}
 \alias{print.rdplot}
 \alias{summary.rdplot}
-\alias{print.summary.rdplot}
-\title{Data-driven Regression Discontinuity Plots}
+\title{Data-Driven Regression Discontinuity Plots}
 \description{
- \code{\link{rdplot}} implements several data-driven RD plots, using either evenly-spaced or quantile-spaced partitioning.  Two type of RD plots are constructed:  (i) RD plots with binned sample means tracing out the underlying regression function (IMSE-optimal selectors), and (ii) RD plots with binned sample means mimicking the underlying variability of the data. For all technical and methodological details see Calonico, Cattaneo and Titiunik (2014d).
+ \code{\link{rdplot}} implements several data-driven RD plots, using either evenly-spaced or quantile-spaced partitioning.  Two type of RD plots are constructed:  (i) RD plots with binned sample means tracing out the underlying regression function (IMSE-optimal selectors), and (ii) RD plots with binned sample means mimicking the underlying variability of the data. For all technical and methodological details see Calonico, Cattaneo and Titiunik (2015a).
  
-    Calonico, Cattaneo and Titiunik (2014b) provides an introduction to this command. For a review on RD methods see Imbens and Lemieux (2008), Lee and Lemieux (2010), Dinardo and Lee (2011),  Calonico, Cattaneo and Titiunik (2014a), and references therein.
+    Calonico, Cattaneo and Titiunik (2015b) provides an introduction to this command. For a review on RD methods see Imbens and Lemieux (2008), Lee and Lemieux (2010), Calonico, Cattaneo and Titiunik (2014a), and references therein.
     
     For local polynomial inference methods see the commands \code{\link{rdrobust}} and \code{\link{rdbwselect}}.
 
-    A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014c).
+    A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014b).
 }
 \usage{
-rdplot(y, x, data, subset = NULL, c = 0, p = 4, 
+rdplot(y, x, subset = NULL, c = 0, p = 4, 
           numbinl = NULL, numbinr = NULL, binselect = "esmv", 
           lowerend = NULL, upperend = NULL, scale = 1, scalel = 1, scaler = 1, 
           hide = FALSE, par=NULL, title = NULL, x.label = NULL, y.label = NULL, 
-          x.lim = NULL, y.lim = NULL, col.dots = NULL, col.lines = NULL, type.dots = NULL,
-          model = FALSE, frame = FALSE)
+          x.lim = NULL, y.lim = NULL, col.dots = NULL, col.lines = NULL, 
+          type.dots = NULL,...)
 }
 \arguments{
   \item{y}{is the dependent variable.}
   \item{x}{is the running variable (a.k.a. score or forcing variable).}
-  \item{data}{an optional data frame.}
   \item{subset}{an optional vector specifying a subset of observations to be used.}
   \item{c}{specifies the RD cutoff in \code{x}; default is \code{c = 0}.}
   \item{p}{specifies the order of the global-polynomial used to approximate the population conditional mean functions for control and treated units; default is \code{p = 4}.} 
@@ -63,8 +61,7 @@ rdplot(y, x, data, subset = NULL, c = 0, p = 4,
   \item{col.dots}{optional setting for the color of the dots in the RD plot.}
   \item{col.lines}{optional setting for the color of the lines in the RD plot.}
   \item{type.dots}{optional setting for the type of lines in the RD plot.}
-  \item{frame}{logical. If \code{TRUE}, the data frame used in model fitting will be returned.}
-  \item{model}{logical. If \code{TRUE}, the model object  will be returned.}
+  \item{...}{other graphical parameters.}
 }
 \value{
   \item{method}{method used to compute the optimal number of bins.}
@@ -72,15 +69,13 @@ rdplot(y, x, data, subset = NULL, c = 0, p = 4,
   \item{coef}{matrix containing the coefficients of the \eqn{p^{th}} order global polynomial estimated both sides of the cutoff.}
 }
 \references{
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014a. "Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs." \emph{Econometrica}, forthcoming.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
-        
-      Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Rpkg.pdf}.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014a. "Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs." \emph{Econometrica} 82(6): 2295-2326, November 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
 
-      Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014c. "Robust Data-Driven Inference in the Regression-Discontinuity Design." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "Robust Data-Driven Inference in the Regression-Discontinuity Design." \emph{Stata Journal} 14(4): 909-946, 4th Quarter 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
 
-      Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014d. "Optimal Data-Driven Regression Discontinuity Plots." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/RD-rdplot.pdf}.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2015a. "Optimal Data-Driven Regression Discontinuity Plots." \emph{Journal of the American Statistical Association}, forthcoming.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_JASA.pdf}.
 
-    Dinardo, J., and D. S. Lee. 2011. "Program Evaluation and Research Designs." In \emph{Handbook of Labor Economics}, ed. O. Ashenfelter and D. Card, vol. 4A, 463-536. Elsevier Science B.V.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2015b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." \emph{R Journal}, forthcoming. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_R.pdf}.
 
     Imbens, G., and T. Lemieux. 2008. "Regression Discontinuity Designs: A Guide to Practice." \emph{Journal of Econometrics} 142(2): 615-635.
 

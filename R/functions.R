@@ -4,14 +4,18 @@
 ### version 0.5  06Jun2014
 ### version 0.6  17Jun2014
 ### version 0.61 03Sep2014
+### version 0.7  14Oct2014
+### version 0.8  04Feb2015
 
-qr.XXinv = function(x, ...) {
-  tcrossprod(solve(qr.R(qr(x, tol = 1e-10)), tol = 1e-10))
+qrXXinv = function(x, ...) {
+  #tcrossprod(solve(qr.R(qr(x, tol = 1e-10)), tol = 1e-10))
+  #tcrossprod(solve(qr.R(qr(x))))
+  chol2inv(chol(crossprod(x)))
 }
 
-qr.reg = function(x,y,w,s2=0,var.comp=TRUE, ...) {
+qrreg = function(x,y,w,s2=0,var.comp=TRUE, ...) {
   M.X = sqrt(w)*x
-  X.M.X_inv = qr.XXinv(M.X) 
+  X.M.X_inv = qrXXinv(M.X) 
   X.M.Y = crossprod(M.X,sqrt(w)*y)
   beta.hat = X.M.X_inv%*%X.M.Y
   Psi.hat=Sigma.hat=0
@@ -87,7 +91,7 @@ if (vce=="resid") {
       }
       else if (!is.null(frd)) {
           z.p=frd[ind]
-          out=qr.reg(XX.p, z.p, w.p, var.comp=FALSE) 
+          out=qrreg(XX.p, z.p, w.p, var.comp=FALSE) 
           mu0_phat_z = out$beta.hat[1]
           sigma[k] = (y[k] - mu0_phat_y)*(frd[k] - mu0_phat_z)
           }

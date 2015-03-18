@@ -4,12 +4,14 @@
 ### version 0.5  06Jun2014
 ### version 0.6  17Jun2014
 ### version 0.61 03Sep2014
+### version 0.7  14Oct2014
+### version 0.8  04Feb2015
 
-rdrobust = function(y, x,  data, subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NULL, h=NULL, b=NULL, rho=NULL, scalepar=1, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, level=95, all=FALSE, model = FALSE, frame = FALSE) {
+rdrobust = function(y, x,  subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NULL, h=NULL, b=NULL, rho=NULL, scalepar=1, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, level=95, all=FALSE) {
   
   call <- match.call()
-  if (missing(data)) 
-  data <- environment(formula)
+  #if (missing(data)) 
+  #data <- environment(formula)
 
   if (!is.null(subset)) {
     x <- x[subset]
@@ -34,14 +36,14 @@ rdrobust = function(y, x,  data, subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NU
   
   if (type == "fuzzy") 
     z <- as.double(z[na.ok])
-  if (frame) {
-    if (type == "sharp") {
-      dat.out <- data.frame(x, y)
-    }
-    else {
-      dat.out <- data.frame(x, y, z)
-    }
-  }
+  #if (frame) {
+  #  if (type == "sharp") {
+  #    dat.out <- data.frame(x, y)
+  #  }
+  #  else {
+  #    dat.out <- data.frame(x, y, z)
+  #  }
+  #}
   
   kernel = tolower(kernel)
   bwselect = toupper(bwselect)
@@ -231,10 +233,10 @@ rdrobust = function(y, x,  data, subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NU
   factor_p = factorial(seq(0,p,1))
   factor_q = factorial(seq(0,q,1))
   
-  out.lp=qr.reg(Xh_lp,Yh_l,whh_l,sigmah_l) 
-  out.rp=qr.reg(Xh_rp,Yh_r,whh_r,sigmah_r)
-  out.lq=qr.reg(Xb_lq,Yb_l,wbb_l,sigmab_l)
-  out.rq=qr.reg(Xb_rq,Yb_r,wbb_r,sigmab_r)
+  out.lp=qrreg(Xh_lp,Yh_l,whh_l,sigmah_l) 
+  out.rp=qrreg(Xh_rp,Yh_r,whh_r,sigmah_r)
+  out.lq=qrreg(Xb_lq,Yb_l,wbb_l,sigmab_l)
+  out.rq=qrreg(Xb_rq,Yb_r,wbb_r,sigmab_r)
   
   tau_lp = factor_p*out.lp$beta.hat
   tau_rp = factor_p*out.rp$beta.hat
@@ -295,10 +297,10 @@ rdrobust = function(y, x,  data, subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NU
     sigmah_T_r = c(rdvce(X=Xh_r, y=Th_r, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
     sigmab_T_l = c(rdvce(X=Xb_l, y=Tb_l, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
     sigmab_T_r = c(rdvce(X=Xb_r, y=Tb_r, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    out.lp = qr.reg(Xh_lp, Th_l, whh_l, sigmah_T_l) 
-    out.rp = qr.reg(Xh_rp, Th_r, whh_r, sigmah_T_r)
-    out.lq = qr.reg(Xb_lq, Tb_l, wbb_l, sigmab_T_l)
-    out.rq = qr.reg(Xb_rq, Tb_r, wbb_r, sigmab_T_r)
+    out.lp = qrreg(Xh_lp, Th_l, whh_l, sigmah_T_l) 
+    out.rp = qrreg(Xh_rp, Th_r, whh_r, sigmah_T_r)
+    out.lq = qrreg(Xb_lq, Tb_l, wbb_l, sigmab_T_l)
+    out.rq = qrreg(Xb_rq, Tb_r, wbb_r, sigmab_T_r)
     tau_T_lp = factor_p*out.lp$beta.hat
     tau_T_rp = factor_p*out.rp$beta.hat
     tau_T_lq = factor_q*out.lq$beta.hat
@@ -343,8 +345,8 @@ rdrobust = function(y, x,  data, subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NU
     sigmah_TY_r = c(rdvce(X=Xh_r, y=Yh_r, frd=Th_r, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
     sigmab_TY_l = c(rdvce(X=Xb_l, y=Yb_l, frd=Tb_l, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
     sigmab_TY_r = c(rdvce(X=Xb_r, y=Yb_r, frd=Tb_r, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    out.lp = qr.reg(Xh_lp, Th_l, whh_l, sigmah_TY_l); out.rp = qr.reg(Xh_rp, Th_r, whh_r, sigmah_TY_r)
-    out.lq = qr.reg(Xb_lq, Tb_l, wbb_l, sigmab_TY_l); out.rq = qr.reg(Xb_rq, Tb_r, wbb_r, sigmab_TY_r)
+    out.lp = qrreg(Xh_lp, Th_l, whh_l, sigmah_TY_l); out.rp = qrreg(Xh_rp, Th_r, whh_r, sigmah_TY_r)
+    out.lq = qrreg(Xb_lq, Tb_l, wbb_l, sigmab_TY_l); out.rq = qrreg(Xb_rq, Tb_r, wbb_r, sigmab_TY_r)
     V_TY_lp   = out.lp$Sigma.hat; V_TY_rp   = out.rp$Sigma.hat
     V_TY_lq   = out.lq$Sigma.hat; V_TY_rq   = out.rq$Sigma.hat
     invGamma_TY_lp = out.lp$X.M.X_inv; invGamma_TY_rp = out.rp$X.M.X_inv
@@ -484,10 +486,10 @@ summary.rdrobust <- function(object,...) {
   res
 }
 
-print.summary.rdrobust <- function(x, ...){
-  cat("Call:\n")
-  print(x$call)
-  cat("\n")
-  printCoefmat(x$coef)
-  #printCoefmat(x$coefficients, P.values=TRUE, has.Pvalue=TRUE)
-}
+#print.summary.rdrobust <- function(x, ...){
+#  cat("Call:\n")
+#  print(x$call)
+#  cat("\n")
+#  printCoefmat(x$coef)
+#  printCoefmat(x$coefficients, P.values=TRUE, has.Pvalue=TRUE)
+#}

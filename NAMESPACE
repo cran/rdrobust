@@ -1,1 +1,10 @@
 exportPattern("^[[:alpha:]]+")
+S3method(print,rdrobust)
+S3method(summary,rdrobust)
+S3method(print,rdbwselect)
+S3method(summary,rdbwselect)
+S3method(print,rdbinselect)
+S3method(summary,rdbinselect)
+S3method(print,rdplot)
+S3method(summary,rdplot)
+

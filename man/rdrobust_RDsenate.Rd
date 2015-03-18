@@ -3,7 +3,7 @@
 \docType{data}
 \title{RD Senate Data}
 \description{
-Extract of the dataset constructed by Cattaneo, Frandsen, and Titiunik (2014), which include measures of incumbency advantage in the U.S. Senate for the period 1914-2010.
+Extract of the dataset constructed by Cattaneo, Frandsen, and Titiunik (2015), which include measures of incumbency advantage in the U.S. Senate for the period 1914-2010.
 }
 \usage{data(rdrobust_RDsenate)}
 \format{
@@ -14,9 +14,9 @@ Extract of the dataset constructed by Cattaneo, Frandsen, and Titiunik (2014), w
   }
 }
 \source{
-    Cattaneo, M. D., Frandsen, B., and R. Titiunik. 2014. "Randomization Inference in the Regression Discontinuity Design: An Application to the Study of Party Advantages in the U.S. Senate." \emph{Journal of Causal Inference}, forthcoming.  \url{http://www-personal.umich.edu/~cattaneo/papers/Cattaneo-Frandsen-Titiunik_2014_JCI.pdf}.
+    Cattaneo, M. D., Frandsen, B., and R. Titiunik. 2015. "Randomization Inference in the Regression Discontinuity Design: An Application to the Study of Party Advantages in the U.S. Senate." \emph{Journal of Causal Inference}, forthcoming.  \url{http://www-personal.umich.edu/~cattaneo/papers/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}.
 }
 \references{
-    Cattaneo, M. D., Frandsen, B., and R. Titiunik. 2014. "Randomization Inference in the Regression Discontinuity Design: An Application to the Study of Party Advantages in the U.S. Senate." \emph{Journal of Causal Inference}, forthcoming.  \url{http://www-personal.umich.edu/~cattaneo/papers/Cattaneo-Frandsen-Titiunik_2014_JCI.pdf}.
+    Cattaneo, M. D., Frandsen, B., and R. Titiunik. 2015. "Randomization Inference in the Regression Discontinuity Design: An Application to the Study of Party Advantages in the U.S. Senate." \emph{Journal of Causal Inference}, forthcoming.  \url{http://www-personal.umich.edu/~cattaneo/papers/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}.
 }
 \keyword{datasets}

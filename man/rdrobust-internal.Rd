@@ -2,11 +2,11 @@
 \alias{rdrobust-internal}
 \alias{bwconst}
 \alias{kweight}
-\alias{qr.XXinv}
-\alias{qr.reg}
+\alias{qrXXinv}
+\alias{qrreg}
 \alias{rdvce}
 \alias{regconst}
-\title{Package internal functions}
+\title{Package Internal Functions}
 \description{
 Internal functions which are not part of the package application programming interface. 
 }

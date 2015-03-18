@@ -4,12 +4,14 @@
 ### version 0.5  06Jun2014
 ### version 0.6  17Jun2014
 ### version 0.61 03Sep2014
+### version 0.7  14Oct2014
+### version 0.8  04Feb2015
 
-rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NULL, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, all=FALSE, precalc=TRUE, model = FALSE, frame = FALSE){
+rdbwselect = function(y, x, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NULL, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, all=FALSE, precalc=TRUE){
   
   call <- match.call()
-  if (missing(data)) 
-  data <- environment(formula)
+  #if (missing(data)) 
+  #data <- environment(formula)
 
   if (!is.null(subset)) {
     x <- x[subset]
@@ -20,9 +22,9 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
   x <- x[na.ok]
   y <- y[na.ok]
   
-  if (frame) {
-        dat.out <- data.frame(x, y)
-  }
+  #if (frame) {
+  #      dat.out <- data.frame(x, y)
+  #}
   
   b_calc = 0
   
@@ -168,18 +170,18 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
     # V_m3
     X_l_pilot_q1 =  matrix(c((X_pilot_l-c)^0, poly(X_pilot_l-c, degree = q+1, raw=T)), length(X_pilot_l), q+2)
     X_r_pilot_q1 =  matrix(c((X_pilot_r-c)^0, poly(X_pilot_r-c, degree = q+1, raw=T)), length(X_pilot_r), q+2)
-    out.lq1 = qr.reg(x = X_l_pilot_q1, y = Y_pilot_l, w = w_pilot_l, s2 = sigma_l_pilot) 
-    out.rq1 = qr.reg(x = X_r_pilot_q1, y = Y_pilot_r, w = w_pilot_r, s2 = sigma_r_pilot) 
+    out.lq1 = qrreg(x = X_l_pilot_q1, y = Y_pilot_l, w = w_pilot_l, s2 = sigma_l_pilot) 
+    out.rq1 = qrreg(x = X_r_pilot_q1, y = Y_pilot_r, w = w_pilot_r, s2 = sigma_r_pilot) 
     V_m3_pilot_cct = out.lq1$Sigma.hat[q+2,q+2]+ out.rq1$Sigma.hat[q+2,q+2]
     # V_m2
     X_l_pilot_q  =  X_l_pilot_q1[,1:(q+1)];  X_r_pilot_q  =  X_r_pilot_q1[,1:(q+1)]
-    out.lq = qr.reg(x = X_l_pilot_q, y = Y_pilot_l, w = w_pilot_l, s2 = sigma_l_pilot) 
-    out.rq = qr.reg(x = X_r_pilot_q, y = Y_pilot_r, w = w_pilot_r, s2 = sigma_r_pilot) 
+    out.lq = qrreg(x = X_l_pilot_q, y = Y_pilot_l, w = w_pilot_l, s2 = sigma_l_pilot) 
+    out.rq = qrreg(x = X_r_pilot_q, y = Y_pilot_r, w = w_pilot_r, s2 = sigma_r_pilot) 
     V_m2_pilot_cct = out.lq$Sigma.hat[q+1,q+1] + out.rq$Sigma.hat[q+1,q+1] 
     # V_m0
     X_l_pilot_p  =  X_l_pilot_q1[,1:(p+1)];  X_r_pilot_p  =  X_r_pilot_q1[,1:(p+1)]
-    out.lp = qr.reg(x = X_l_pilot_p, y = Y_pilot_l, w = w_pilot_l, s2 = sigma_l_pilot) 
-    out.rp = qr.reg(x = X_r_pilot_p, y = Y_pilot_r, w = w_pilot_r, s2 = sigma_r_pilot) 
+    out.lp = qrreg(x = X_l_pilot_p, y = Y_pilot_l, w = w_pilot_l, s2 = sigma_l_pilot) 
+    out.rp = qrreg(x = X_r_pilot_p, y = Y_pilot_r, w = w_pilot_r, s2 = sigma_r_pilot) 
     V_m0_pilot_cct = out.lp$Sigma.hat[deriv+1,deriv+1]+ out.rp$Sigma.hat[deriv+1,deriv+1]
     # Num/Den
     m4_l_pilot_cct = qr.coef(qr(X_lq2, tol = 1e-10), Y_l)[q3]
@@ -195,8 +197,8 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
     sigma_r_pilot = c(rdvce(X = X_q_r, y = Y_q_r, p = p, h = h_pilot_cct, matches = matches, vce = vce, kernel = kernel))
     X_q1_l  = matrix(c((X_q_l-c)^0, poly(X_q_l-c, degree = q+1, raw = T)), length(X_q_l), q+2)
     X_q1_r  = matrix(c((X_q_r-c)^0, poly(X_q_r-c, degree = q+1, raw = T)), length(X_q_r), q+2)
-    out.lq1 = qr.reg(x = X_q1_l, y = Y_q_l, w = w_q_l, s2 = sigma_l_pilot) 
-    out.rq1 = qr.reg(x = X_q1_r, y = Y_q_r, w = w_q_r, s2 = sigma_r_pilot) 
+    out.lq1 = qrreg(x = X_q1_l, y = Y_q_l, w = w_q_l, s2 = sigma_l_pilot) 
+    out.rq1 = qrreg(x = X_q1_r, y = Y_q_r, w = w_q_r, s2 = sigma_r_pilot) 
     V_m3_q_cct = out.lq1$Sigma.hat[q+2,q+2]+ out.rq1$Sigma.hat[q+2,q+2]
     m3_l_cct   = out.lq1$beta[q+2]; m3_r_cct = out.rq1$beta[q+2]
     # Num/Den
@@ -212,8 +214,8 @@ rdbwselect = function(y, x, data, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NUL
     sigma_r_pilot = c(rdvce(X = X_b_r, y = Y_b_r, p = p, h = h_pilot_cct, matches = matches, vce = vce, kernel = kernel))
     X_q_l  = matrix(c((X_b_l-c)^0, poly(X_b_l-c, degree = q, raw = T)), length(X_b_l), q+1)
     X_q_r  = matrix(c((X_b_r-c)^0, poly(X_b_r-c, degree = q, raw = T)), length(X_b_r), q+1)
-    out.lq = qr.reg(x = X_q_l, y = Y_b_l, w = w_b_l, s2 = sigma_l_pilot) 
-    out.rq = qr.reg(x = X_q_r, y = Y_b_r, w = w_b_r, s2 = sigma_r_pilot) 
+    out.lq = qrreg(x = X_q_l, y = Y_b_l, w = w_b_l, s2 = sigma_l_pilot) 
+    out.rq = qrreg(x = X_q_r, y = Y_b_r, w = w_b_r, s2 = sigma_r_pilot) 
     V_m2_b_cct = out.lq$Sigma.hat[p+2,p+2] + out.rq$Sigma.hat[p+2,p+2] 
     m2_l_cct   = out.lq$beta[p+2];  m2_r_cct=out.rq$beta[p+2] 
     D_h_cct = 2*(p+1-deriv)*(C1_h*(m2_r_cct - (-1)^(deriv+p+1)*m2_l_cct))^2
@@ -493,9 +495,9 @@ summary.rdbwselect <- function(object,...) {
   res
 }
 
-print.summary.rdbwselect <- function(x, ...){
-  cat("Call:\n")
-  print(x$call)
-  cat("\n")
-  printCoefmat(x$coefficients, P.values=FALSE, has.Pvalue=FALSE)
-}
+#print.summary.rdbwselect <- function(x, ...){
+#  cat("Call:\n")
+#  print(x$call)
+#  cat("\n")
+#  printCoefmat(x$coefficients, P.values=FALSE, has.Pvalue=FALSE)
+#}

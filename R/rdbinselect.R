@@ -5,14 +5,14 @@
 ### version 0.6  17Jun2014
 ### version 0.61 03Sep2014
 
-rdbinselect = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL, 
+rdbinselect = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL, 
                           binselect="es", lowerend=NULL, upperend=NULL, scale=1,
                           hide=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
-                          x.lim=NULL, y.lim=NULL, model = FALSE, frame = FALSE) {
+                          x.lim=NULL, y.lim=NULL) {
 
   call <- match.call()
-  if (missing(data)) 
-  data <- environment(formula)
+  #if (missing(data)) 
+  #data <- environment(formula)
   if (!is.null(subset)) {
     x <- x[subset]
     y <- y[subset]
@@ -21,9 +21,9 @@ rdbinselect = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbin
   x <- x[na.ok]
   y <- y[na.ok]
   
-  if (frame) {
-    dat.out <- data.frame(x, y)
-  }
+  #if (frame) {
+  #  dat.out <- data.frame(x, y)
+  #}
 
   if (is.null(lowerend)) {
 	    lowerend = min(x)
@@ -354,9 +354,9 @@ summary.rdbinselect <- function(object,...) {
   res
 }
 
-print.summary.rdbinselect <- function(x, ...){
-  cat("Call:\n")
-  print(x$call)
-  cat("\n")
-  printCoefmat(x$coefficients, P.values=FALSE, has.Pvalue=FALSE)
-}
+#print.summary.rdbinselect <- function(x, ...){
+#  cat("Call:\n")
+#  print(x$call)
+#  cat("\n")
+#  printCoefmat(x$coefficients, P.values=FALSE, has.Pvalue=FALSE)
+#}

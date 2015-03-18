@@ -5,16 +5,16 @@
 ### version 0.6  17Jun2014
 ### version 0.61 03Sep2014
 ### version 0.7  14Oct2014
+### version 0.8  04Feb2015
 
-rdplot = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL, 
+rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL, 
                           binselect="esmv", lowerend=NULL, upperend=NULL, scale=1, scalel=1,scaler=1,
                           hide=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
-                          x.lim=NULL, y.lim=NULL, col.dots=NULL, col.lines=NULL, type.dots = NULL,
-                          model = FALSE, frame = FALSE) {
+                          x.lim=NULL, y.lim=NULL, col.dots=NULL, col.lines=NULL, type.dots = NULL,...) {
 
   call <- match.call()
-  if (missing(data)) 
-  data <- environment(formula)
+  #if (missing(data)) 
+  #data <- environment(formula)
   if (!is.null(subset)) {
     x <- x[subset]
     y <- y[subset]
@@ -23,9 +23,9 @@ rdplot = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NUL
   x <- x[na.ok]
   y <- y[na.ok]
   
-  if (frame) {
-    dat.out <- data.frame(x, y)
-  }
+  #if (frame) {
+  #  dat.out <- data.frame(x, y)
+  #}
 
   if (is.null(lowerend)) {
 	    lowerend = min(x)
@@ -326,7 +326,7 @@ rdplot = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NUL
   if (hide=="FALSE") {
   
   if (is.null(title)){
-    title="RD Bin Select"
+    title="RD Plot"
   } 
   
   if (is.null(x.label)){
@@ -345,7 +345,7 @@ rdplot = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NUL
     y.lim=c(min(c(y_l,y_r)),max(c(y_l,y_r)))
   }
     par=par
-    plot(bin_xmean[order(bin_xmean)],bin_ymean[order(bin_xmean)], main=title, xlab=x.label, ylab=y.label, ylim=y.lim, xlim=x.lim, col=col.dots, pch=type.dots)
+    plot(bin_xmean[order(bin_xmean)],bin_ymean[order(bin_xmean)], main=title, xlab=x.label, ylab=y.label, ylim=y.lim, xlim=x.lim, col=col.dots, pch=type.dots,...)
 	  #points(x_l[order(x_l)],mu0_p1_l[order(x_l)],type="l",col=2) 
 	  #points(x_r[order(x_r)],mu0_p1_r[order(x_r)],type="l",col=2)  
     lines(x_l[order(x_l)],mu0_p1_l[order(x_l)],type="l",col=col.lines) 
@@ -368,7 +368,7 @@ rdplot = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NUL
     tabl1.str[9,]  = formatC(c(J_MV),digits=0, format="f")
     tabl1.str[10,]  = c("","")
     tabl1.str[11,]  = c("","")
-    tabl1.str[12,]  = formatC(c(scalel,scaler),digits=4, format="f")
+    tabl1.str[12,]  = formatC(c(scale_l,scale_r),digits=4, format="f")
     tabl1.str[13,]  = formatC(c(1/(1+scale_l^3), 1/(1+scale_r^3)),digits=4, format="f")
     tabl1.str[14,] = formatC(c(scale_l^3/(1+scale_l^3), scale_r^3/(1+scale_r^3)),digits=4, format="f")
 
@@ -383,7 +383,7 @@ rdplot = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NUL
     results[5,] = c(jump_l,jump_r)
     results[6,] = J_IMSE
     results[7,] = J_MV
-    results[8,] = c(scalel,scaler)
+    results[8,] = c(scale_l,scale_r)
     results[9,] = c(1/(1+scale_l^3), 1/(1+scale_r^3))
     results[10,] = c(scale_l^3/(1+scale_l^3), scale_r^3/(1+scale_r^3))
     rownames(results)=c("Number of Obs.","Polynomial Order","Chosen Scale","Selected bins","Bin Length","IMSE-optimal bins","Mimicking Variance bins","Implied scale","WIMSE variance weight","WIMSE bias weight")
@@ -397,7 +397,7 @@ rdplot = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NUL
     
     out$call <- match.call()
     class(out) <- "rdplot"
-    return(out)
+    return(invisible(out))
  # }
 }
 
@@ -412,9 +412,11 @@ rdplot = function(y, x, data, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NUL
 
 print.rdplot <- function(x,...){
   cat("Call:\n")
-  print(x$call)
+  #print(x$call)
+  cat(deparse(x$call, width.cutoff=getOption("width")), sep = "\n")
   cat("\n")
-  print(paste("Method: ",x$method),quote=F)
+  #cat(paste("Method: ",x$method))
+  cat(strwrap(paste("Method: ", x$method)), sep = "\n")
   cat("\n\n")
   print(x$tabl1.str,quote=F)
 }
@@ -426,9 +428,10 @@ summary.rdplot <- function(object,...) {
   res
 }
 
-print.summary.rdplot <- function(x, ...){
-  cat("Call:\n")
-  print(x$call)
-  cat("\n")
-  printCoefmat(x$coefficients, P.values=FALSE, has.Pvalue=FALSE)
-}
+#print.summary.rdplot <- function(x, ...){
+#  cat("Call:\n")
+#  print(x$call)
+#  cat("\n")
+#  printCoefmat(x$coefficients, P.values=FALSE, has.Pvalue=FALSE)
+#}
+

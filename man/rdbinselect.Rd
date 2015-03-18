@@ -2,29 +2,27 @@
 \alias{rdbinselect}
 \alias{print.rdbinselect}
 \alias{summary.rdbinselect}
-\alias{print.summary.rdbinselect}
-\title{Data-driven optimal length selector of evenly-spaced and quantile-based bins employed to approximate the underlying regression functions in RD estimation}
+\title{Data-Driven Optimal Length Selector of Evenly-Spaced and Quantile-Based Bins Employed to Approximate the Underlying Regression Functions in RD Estimation}
 \description{
-NOTE: this command is no longer mantained, and is included only for back compatibility. Please use the new command \code{\link{rdplot}}.
+ \code{\link{rdbinselect}} implements IMSE-optimal data-driven evenly-spaced and quantile-spaced RD plots.
 
- \code{\link{rdbinselect}} employs the results in Calonico, Cattaneo and Titiunik (2014d) to implement several novel data-driven optimal choices of evenly-spaced and quantile-based bins used to approximate the underlying regression functions by local sample means, which is then used to construct the RD plots usually found in empirical applications. 
+    NOTE: this command is no longer mantained, and it is included only for back compatibility. Please use the new command \code{\link{rdplot}}.
 
-    Calonico, Cattaneo and Titiunik (2014b) provides an introduction to this command. For a review on RD methods see Imbens and Lemieux (2008), Lee and Lemieux (2010), Dinardo and Lee (2011),  Calonico, Cattaneo and Titiunik (2014a), and references therein.
+    See Calonico, Cattaneo and Titiunik (2015a) and Calonico, Cattaneo and Titiunik (2014b) for a discussion on the results implemented by these commands.
     
-    A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014c).
+    A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014b).
 }
 \usage{
-rdbinselect(y, x, data, subset = NULL, c = 0, p = 4, 
+rdbinselect(y, x, subset = NULL, c = 0, p = 4, 
           numbinl = NULL, numbinr = NULL, binselect = "es", 
           lowerend = NULL, upperend = NULL, scale = 1, hide = FALSE, 
           par=NULL, title = NULL, x.label = NULL, y.label = NULL, 
-          x.lim = NULL, y.lim = NULL, model = FALSE, frame = FALSE)
+          x.lim = NULL, y.lim = NULL)
 
 }
 \arguments{
   \item{y}{is the dependent variable.}
   \item{x}{is the running variable (a.k.a. score or forcing variable).}
-  \item{data}{an optional data frame.}
   \item{subset}{an optional vector specifying a subset of observations to be used.}
   \item{c}{specifies the RD cutoff in \code{x}; default is \code{c = 0}.}
   \item{p}{specifies the order of the global-polynomial used to approximate the population conditional mean functions for control and treated units; default is \code{p = 4}.} 
@@ -53,8 +51,6 @@ rdbinselect(y, x, data, subset = NULL, c = 0, p = 4,
   \item{y.label}{optional label for the y-axis of the RD plot.}
   \item{x.lim}{optional setting for the range of the x-axis in the RD plot.}
   \item{y.lim}{optional setting for the range of the x-axis in the RD plot.}
-  \item{frame}{logical. If \code{TRUE}, the data frame used in model fitting will be returned.}
-  \item{model}{logical. If \code{TRUE}, the model object  will be returned.}
 }
 \value{
   \item{method}{method used to compute the optimal number of bins.}
@@ -62,21 +58,14 @@ rdbinselect(y, x, data, subset = NULL, c = 0, p = 4,
   \item{coef}{matrix containing the coefficients of the \eqn{p^{th}} order global polynomial estimated both sides of the cutoff.}
 }
 \references{
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014a. "Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs." \emph{Econometrica}, forthcoming.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
-        
-      Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Rpkg.pdf}.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014a. "Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs." \emph{Econometrica} 82(6): 2295-2326, November 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
 
-      Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014c. "Robust Data-Driven Inference in the Regression-Discontinuity Design." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "Robust Data-Driven Inference in the Regression-Discontinuity Design." \emph{Stata Journal} 14(4): 909-946, 4th Quarter 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
 
-      Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014d. "Optimal Data-Driven Regression Discontinuity Plots." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/RD-rdplot.pdf}.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2015a. "Optimal Data-Driven Regression Discontinuity Plots." \emph{Journal of the American Statistical Association}, forthcoming.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_JASA.pdf}.
 
-    Dinardo, J., and D. S. Lee. 2011. "Program Evaluation and Research Designs." In \emph{Handbook of Labor Economics}, ed. O. Ashenfelter and D. Card, vol. 4A, 463-536. Elsevier Science B.V.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2015b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." \emph{R Journal}, forthcoming. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_R.pdf}.
 
-    Imbens, G., and T. Lemieux. 2008. "Regression Discontinuity Designs: A Guide to Practice." \emph{Journal of Econometrics} 142(2): 615-635.
-
-    Lee, D. S., and T. Lemieux. 2010. "Regression Discontinuity Designs in Economics." \emph{Journal of Economic Literature} 48(2): 281-355.
-    
-        
 }
 \author{
 Sebastian Calonico, University of Miami, Coral Gables, FL.  \email{scalonico@bus.miami.edu}.
@@ -96,5 +85,5 @@ rdbinselect(y,x)
 \keyword{ partitioning}
 \keyword{ tuning parameter selection}
 \seealso{
-  \code{\link{rdbwselect}}, \code{\link{rdrobust}}
+  \code{\link{rdbwselect}}, \code{\link{rdrobust}}, \code{\link{rdplot}}
 }

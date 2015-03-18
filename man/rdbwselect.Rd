@@ -2,26 +2,24 @@
 \alias{rdbwselect}
 \alias{print.rdbwselect}
 \alias{summary.rdbwselect}
-\alias{print.summary.rdbwselect}
-\title{Bandwidth selection procedures for local-polynomial RD estimators}
+\title{Bandwidth Selection Procedures for Local-Polynomial RD Estimators}
 \description{
     \code{\link{rdbwselect}} implements bandwidth selection procedures for local-polynomial RD estimators proposed in Calonico, Cattaneo and Titiunik (2014a). It also computes bandwith selection procedures proposed in Ludwig and Miller (2007) and Imbens and Kalyanaraman (2012).
 
-    Calonico, Cattaneo and Titiunik (2014b) provides an introduction to this command. Additional details for conventional approaches to conduct inference in the RD design can be found in Imbens and Lemieux (2008), Lee and Lemieux (2010), Dinardo and Lee (2011), and references therein.
+    Calonico, Cattaneo and Titiunik (2015b) provides an introduction to this command. Additional details for conventional approaches to conduct inference in the RD design can be found in Imbens and Lemieux (2008), Lee and Lemieux (2010), and references therein.
 
-    For data-driven RD plots use the command \code{\link{rdplot}}, which implements the results in Calonico, Cattaneo and Titiunik (2014d).
+    For data-driven RD plots use the command \code{\link{rdplot}}, which implements the results in Calonico, Cattaneo and Titiunik (2015a).
 
-    A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014c).
+    A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014b).
 }
-\usage{rdbwselect(y, x, data, subset = NULL, c = 0, p = 1, q = 2, deriv = 0,
+\usage{rdbwselect(y, x, subset = NULL, c = 0, p = 1, q = 2, deriv = 0,
               rho = NULL, kernel = "tri", bwselect = "CCT", scaleregul = 1,
               delta = 0.5, cvgrid_min = NULL, cvgrid_max = NULL, 
               cvgrid_length = NULL, cvplot = FALSE, vce = "nn", matches = 3, 
-              all = FALSE, precalc = TRUE, model = FALSE, frame = FALSE)}
+              all = FALSE, precalc = TRUE )}
 \arguments{
   \item{y}{is the dependent variable.}
   \item{x}{is the running variable (a.k.a. score or forcing variable).}  
-  \item{data}{an optional data frame.}
   \item{subset}{an optional vector specifying a subset of observations to be used.}
   \item{c}{specifies the RD cutoff in \code{x}; default is \code{c = 0}.}
     \item{p}{specifies the order of the local-polynomial used to construct the point-estimator; default is \code{p = 1} (local linear regression).}
@@ -57,9 +55,6 @@
   
   \code{CV} for cross-validation method proposed by Ludwig and Miller (2007).}
   
-  \item{model}{logical. If \code{TRUE}, the model object will be returned.}
-  \item{frame}{logical. If \code{TRUE}, the data frame used  in model fitting will be returned.}
-
   \item{precalc}{internal option.}
 }
 \value{
@@ -70,15 +65,13 @@
   \item{q}{order of the local-polynomial used to construct the bias-correction estimator.}
 }
 \references{
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014a. "Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs." \emph{Econometrica}, forthcoming.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
-        
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." University of Michigan, Department of Economics. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Rpkg.pdf}.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014a. "Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs." \emph{Econometrica} 82(6): 2295-2326, November 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
 
-    Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014c. "Robust Data-Driven Inference in the Regression-Discontinuity Design." University of Michigan, Department of Economics.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
-    
-     Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014d. "Optimal Data-Driven Regression Discontinuity Plots." University of Michigan, Department of Economics.   \url{http://www-personal.umich.edu/~cattaneo/papers/RD-rdplot.pdf}.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "Robust Data-Driven Inference in the Regression-Discontinuity Design." \emph{Stata Journal} 14(4): 909-946, 4th Quarter 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
 
-    Dinardo, J., and D. S. Lee. 2011. "Program Evaluation and Research Designs." In \emph{Handbook of Labor Economics}, ed. O. Ashenfelter and D. Card, vol. 4A, 463-536. Elsevier Science B.V.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2015a. "Optimal Data-Driven Regression Discontinuity Plots." \emph{Journal of the American Statistical Association}, forthcoming.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_JASA.pdf}.
+
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2015b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." \emph{R Journal}, forthcoming. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_R.pdf}.
 
     Imbens, G., and T. Lemieux. 2008. "Regression Discontinuity Designs: A Guide to Practice." \emph{Journal of Econometrics} 142(2): 615-635.
 
