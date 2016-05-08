@@ -4,61 +4,89 @@
 \alias{summary.rdrobust}
 \title{Local-Polynomial RD Estimation with Robust Confidence Intervals}
 \description{
-    \code{\link{rdrobust}} implements a local-polynomial RD estimator with robust confidence intervals as proposed in Calonico, Cattaneo and Titiunik (2014a). It also computes alternative procedures available in the literature.
 
-    Calonico, Cattaneo and Titiunik (2015b) provides an introduction to this command. Additional details for conventional approaches to conduct inference in the RD design can be found in Imbens and Lemieux (2008), Lee and Lemieux (2010), and references therein.
-    
-    For data-driven RD plots use the command \code{\link{rdplot}}, which implements the results in Calonico, Cattaneo and Titiunik (2015a).
-    
-    A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014b).
+\code{\link{rdrobust}} implements local polynomial Regression Discontinuity (RD) point estimators with robust bias-corrected confidence intervals and inference procedures developed in Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2016a), and Calonico, Cattaneo, Farrell and Titiunik (2016). It also computes alternative estimation and inference procedures available in the literature.
+
+Companion commands are: \code{\link{rdbwselect}} for data-driven bandwidth selection, and \code{\link{rdplot}} for data-driven RD plots (see
+Calonico, Cattaneo and Titiunik (2015a) for details).
+
+A detailed introduction to this command is given in Calonico, Cattaneo and Titiunik (2015b), and Calonico, Cattaneo, Farrell and Titiunik (2016b). A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014b).
+
+For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://sites.google.com/site/rdpackages/}
+
 }
-\usage{rdrobust(y, x, subset = NULL, c = 0,  p = 1, q = 2, deriv = 0, 
-            fuzzy = NULL, h = NULL, b = NULL, rho = NULL, scalepar = 1,
-            kernel = "tri", bwselect = "CCT",  scaleregul = 1, delta = 0.5, 
-            cvgrid_min = NULL, cvgrid_max = NULL, cvgrid_length = NULL, 
-            cvplot = FALSE, vce = "nn", matches = 3, level = 95,
-            all = FALSE)}
+\usage{rdrobust(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, 
+            c = 0,  p = 1, q = 2, deriv = 0, 
+            h = NULL, b = NULL, rho = NULL, scalepar = 1,
+            kernel = "tri", bwselect = "mserd",  scaleregul = 1, sharpbw = FALSE, 
+            vce = "nn", nnmatch = 3, level = 95, all = FALSE, subset = NULL)}
 \arguments{
   \item{y}{is the dependent variable.}
   \item{x}{is the running variable (a.k.a. score or forcing variable).}
-  \item{subset}{an optional vector specifying a subset of observations to be used.}
+  \item{covs}{specifies additional covariates to be used for estimation and inference.}
+  \item{fuzzy}{specifies the treatment status variable used to implement fuzzy RD estimation (or Fuzzy Kink RD if \code{deriv=1} is also specified). Default is Sharp RD design and hence this option is not used.} 
+  \item{cluster}{indicates the cluster ID variable used for cluster-robust variance estimation with degrees-of-freedom weights. By default it is combined with \code{vce=nn} for cluster-robust nearest neighbor variance estimation. Another option is plug-in residuals combined with \code{vce=hc0}.}
   \item{c}{specifies the RD cutoff in \code{x}; default is \code{c = 0}.}
   \item{p}{specifies the order of the local-polynomial used to construct the point-estimator; default is \code{p = 1} (local linear regression).}
   \item{q}{specifies the order of the local-polynomial used to construct the bias-correction; default is \code{q = 2} (local quadratic regression).}
-    \item{deriv}{specifies the order of the derivative of the regression function to be estimated; default is \code{deriv = 0} (Sharp RD, or Fuzzy RD if \code{fuzzy} is also specified). Setting it equal to 1 results in estimation of a Kink RD design (or Fuzzy Kink RD if \code{fuzzy} is also specified).}
-  \item{fuzzy}{specifies the treatment status variable used to implement Fuzzy RD estimation (or Fuzzy Kink RD if \code{deriv = 1} is also specified).
-Default is Sharp RD design and hence this option is not used. 
-\emph{Note}: For fuzzy RD designs, bandwidths are estimated using sharp RD bandwidth selectors for the reduced form outcome equation.}
+  \item{deriv}{specifies the order of the derivative of the regression functions to be estimated. Default is \code{deriv=0} (for Sharp RD, or for Fuzzy RD if \code{fuzzy} is also specified). Setting \code{deriv=1} results in estimation of a Kink RD design (up to scale), or Fuzzy Kink RD if \code{fuzzy} is also specified.}
+  \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
 
-  \item{h}{directly sets the main bandwidth. If not specified, it is computed by the companion command \code{\link{rdbwselect}}.}
-  \item{b}{directly sets the pilot bandwidth. If not specified, it is computed by the companion command \code{\link{rdbwselect}}.}
-  \item{rho}{sets the value of \code{rho}, so that the pilot bandwidth \code{b} equals \code{h/rho}. Default is \code{rho = 1} if \code{h} is specified but \code{b} is not.}
+  \item{h}{specifies the main bandwidth used to construct the RD point estimator. If not specified, bandwidth \code{h} is computed by the companion command \code{\link{rdbwselect}}. If two bandwidths are specified, the first bandwidth is used for the data below the cutoff and the second bandwidth is used for the data above the cutoff.}
+
+  \item{b}{specifies the bias bandwidth used to construct the bias-correction estimator. If not specified, bandwidth \code{b} is computed by the companion command \code{\link{rdbwselect}}. If two bandwidths are specified, the first bandwidth is used for the data below the cutoff and the second bandwidth is used for the data above the cutoff.}
+
+  \item{rho}{specifies the value of \code{rho}, so that the bias bandwidth \code{b} equals \code{h/rho}. Default is \code{rho = 1} if \code{h} is specified but \code{b} is not.}
+  
     \item{scalepar}{specifies scaling factor for RD parameter of interest. This option is useful when the population parameter of interest involves a known multiplicative factor (e.g., sharp kink RD).  Default is \code{scalepar = 1} (no scaling).}
-    \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
-    
-  \item{bwselect}{selects the bandwidth selection procedure to be used. By default it computes both \code{h} and \code{b}, unless \code{rho} is specified, in which case it only computes \code{h} and sets \code{b} = \code{h/rho}. Options are:
-  
-  \code{CCT} for bandwidth selector proposed by Calonico, Cattaneo and Titiunik (2014a)  (default option).
-  
-  \code{IK} for bandwidth selector proposed by Imbens and Kalyanaraman (2012) (only available for Sharp RD design).
-  
-  \code{CV} for cross-validation method proposded by Ludwig and Miller (2007) (only available for Sharp RD design).}
-  
-  \item{scaleregul}{specifies scaling factor for the regularization terms of \code{CCT} and \code{IK} bandwidth selectors. Setting \code{scaleregul = 0} removes the regularization term from the bandwidth selectors; default is \code{scaleregul = 1}.}
 
-  \item{delta}{sets the quantile that defines the sample used in the cross-validation procedure. This option is used only  if \code{bwselect(CV)} is specified. See companion command \code{\link{rdbwselect}} for more details; default is \code{delta = 0.5}, that is, the median of the control and treated samples.}
-  \item{cvgrid_min}{sets the minimum value of the bandwidth grid used in the cross-validation procedure. This option is used only if \code{bwselect = "CV"} is specified. See companion command \code{\link{rdbwselect}} for more details.}
-  \item{cvgrid_max}{sets the maximum value of the bandwidth grid used in the cross-validation procedure. This option is used only if \code{bwselect = "CV"} is specified. See companion command \code{\link{rdbwselect}} for more details.}
-  \item{cvgrid_length}{sets the bin length of the (evenly-spaced) bandwidth grid used in the cross-validation procedure. This option is used only if \code{bwselect = "CV"} is specified. See companion command \code{\link{rdbwselect}} for more details.}
-  \item{cvplot}{generates a graph of the CV objective function. This option is used only if \code{bwselect = "CV"} is specified. See companion command \code{\link{rdbwselect}} for more details.}
+\item{bwselect}{specifies the bandwidth selection procedure to be used. By default it computes both \code{h} and \code{b}, unless \code{rho} is specified, in which case it only computes \code{h} and sets \code{b=h/rho}.}
+Options are:
 
-\item{vce}{specifies the procedure used to compute the variance-covariance matrix estimator. This option is used only if \code{CCT} or \code{IK} bankdwith procedures are employed. Options are:
+\code{mserd} one common MSE-optimal bandwidth selector for the RD treatment effect estimator.
 
-  \code{nn} for nearest-neighbor matches residuals using \code{matches} number of matches. This is the default option (with \code{matches = 3}, see below).
+\code{msetwo} two different MSE-optimal bandwidth selectors (below and above the cutoff) for the RD treatment effect estimator.
 
-  \code{resid} for estimated plug-in residuals using \code{h} bandwidth.}
-  \item{matches}{specifies the number of matches in the nearest-neighbor based variance-covariance matrix estimator. This options is used only when nearest-neighbor matches residuals are employed; default is \code{matches = 3}.}
-    
+\code{msesum} one common MSE-optimal bandwidth selector for the sum of regression estimates (as opposed to difference thereof).
+
+\code{msecomb1} for min(\code{mserd},\code{msesum}).
+
+\code{msecomb2} for median(\code{msetwo},\code{mserd},\code{msesum}), for each side of the cutoff separately.
+
+\code{cerrd} one common CER-optimal bandwidth selector for the RD treatment effect estimator.
+
+\code{certwo} two different CER-optimal bandwidth selectors (below and above the cutoff) for the RD treatment effect estimator.
+
+\code{cersum} one common CER-optimal bandwidth selector for the sum of regression estimates (as opposed to difference thereof).
+
+\code{cercomb1} for min(\code{cerrd},\code{cersum}).
+
+\code{cercomb2} for median(\code{certwo},\code{cerrd},\code{cersum}), for each side of the cutoff separately.
+
+Note: MSE = Mean Square Error; CER = Coverage Error Rate.
+Default is \code{bwselect=mserd}. For details on implementation see Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2016a),
+and Calonico, Cattaneo, Farrell and Titiunik (2016), and the companion software articles.
+
+  \item{scaleregul}{specifies scaling factor for the regularization term added to the denominator of the bandwidth selectors. Setting \code{scaleregul = 0} removes the regularization term from the bandwidth selectors; default is \code{scaleregul = 1}.}
+  
+   \item{sharpbw}{option to perform fuzzy RD estimation using a bandwidth selection procedure for the sharp RD model. This option is automatically selected if there is perfect compliance at either side of the threshold.}
+
+\item{vce}{specifies the procedure used to compute the variance-covariance matrix estimator.
+Options are:
+
+\code{nn} for heteroskedasticity-robust nearest neighbor variance estimator with \code{nnmatch} the (minimum) number of neighbors to be used.
+
+\code{hc0} for heteroskedasticity-robust plug-in residuals variance estimator without weights.
+
+\code{hc1} for heteroskedasticity-robust plug-in residuals variance estimator with \code{hc1} weights.
+
+\code{hc2} for heteroskedasticity-robust plug-in residuals variance estimator with \code{hc2} weights.
+
+\code{hc3} for heteroskedasticity-robust plug-in residuals variance estimator with \code{hc3} weights.
+
+Default is \code{vce=nn}.}
+
+  \item{nnmatch}{to be combined with for \code{vce=nn} for heteroskedasticity-robust nearest neighbor variance estimator with \code{nnmatch} indicating the minimum number of neighbors to be used. Default is \code{nnmatch=3}}
   \item{level}{sets the confidence level for confidence intervals; default is \code{level = 95}.}
   \item{all}{if specified, \code{\link{rdrobust}} reports three different procedures:
   
@@ -67,6 +95,8 @@ Default is Sharp RD design and hence this option is not used.
   (ii) bias-corrected estimates with conventional standard errors.
   
   (iii) bias-corrected estimates with robust standard errors.}
+  
+  \item{subset}{an optional vector specifying a subset of observations to be used.}
 }
 \value{
   \item{c}{cutoff value.}
@@ -83,27 +113,38 @@ Default is Sharp RD design and hence this option is not used.
   \item{ci}{matrix containing the confidence intervals associated with conventional, bias-corrected and robust local-polynomial RD estimates.}
 }
 \references{
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014a. "Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs." \emph{Econometrica} 82(6): 2295-2326, November 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
 
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "Robust Data-Driven Inference in the Regression-Discontinuity Design." \emph{Stata Journal} 14(4): 909-946, 4th Quarter 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
+Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2016. On the Effect of Bias Estimation on Coverage Accuracy in Nonparametric Inference. Working Paper.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell_2016_wp.pdf}.
 
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2015a. "Optimal Data-Driven Regression Discontinuity Plots." \emph{Journal of the American Statistical Association}, forthcoming.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_JASA.pdf}.
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016a. Regression Discontinuity Designs using Covariates. Working Paper.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2016_wp.pdf}.
 
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2015b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." \emph{R Journal}, forthcoming. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_R.pdf}.
-        
-    Imbens, G., and T. Lemieux. 2008. "Regression Discontinuity Designs: A Guide to Practice." \emph{Journal of Econometrics} 142(2): 615-635.
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016b. rdrobust: Software for Regression Discontinuity Designs. Working Paper.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2016_Stata.pdf}.
 
-    Imbens, G. W., and K. Kalyanaraman. 2012. "Optimal Bandwidth Choice for the Regression Discontinuity Estimator." \emph{Review of Economic Studies} 79(3): 933-959.
-    
-    Lee, D. S., and T. Lemieux. 2010. "Regression Discontinuity Designs in Economics." \emph{Journal of Economic Literature} 48(2): 281-355.
 
-    Ludwig, J., and D. L. Miller. 2007. "Does Head Start Improve Children's Life Chances? Evidence from a Regression Discontinuity Design." \emph{Quarterly Journal of Economics} 122(1): 159-208.
-       
+Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014a. Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs. Econometrica 82(6): 2295-2326.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
+
+Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014b. Robust Data-Driven Inference in the Regression-Discontinuity Design. Stata Journal 14(4): 909-946.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
+
+Calonico, S., M. D. Cattaneo, and R. Titiunik. 2015a. Optimal Data-Driven Regression Discontinuity Plots. Journal of the American Statistical Association 110(512): 1753-1769.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_JASA.pdf}.
+
+Calonico, S., M. D. Cattaneo, and R. Titiunik. 2015b. rdrobust: An R Package for Robust Nonparametric Inference in Regression-Discontinuity Designs. R Journal 7(1): 38-51.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_R.pdf}.
+
+Cattaneo, M. D., B. Frandsen, and R. Titiunik. 2015. Randomization Inference in the Regression Discontinuity Design: An Application to the Study of Party Advantages in the U.S. Senate. Journal of Causal Inference 3(1): 1-24.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}.
 }
 \author{
 Sebastian Calonico, University of Miami, Coral Gables, FL.  \email{scalonico@bus.miami.edu}.
 
 Matias D. Cattaneo, University of Michigan, Ann Arbor, MI.  \email{cattaneo@umich.edu}.
+
+Max H. Farrell, University of Chicago, Chicago, IL. \email{max.farrell@chicagobooth.edu}.
 
 Rocio Titiunik, University of Michigan, Ann Arbor, MI.  \email{titiunik@umich.edu}.
 }

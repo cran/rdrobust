@@ -7,14 +7,10 @@
 ### version 0.7  14Oct2014
 ### version 0.8  04Feb2015
 
-rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL, 
-                          binselect="esmv", lowerend=NULL, upperend=NULL, scale=1, scalel=1,scaler=1,
-                          hide=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
+rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kernel = "uni", h=NULL, 
+                          hide=FALSE, ci=NULL, shade=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
                           x.lim=NULL, y.lim=NULL, col.dots=NULL, col.lines=NULL, type.dots = NULL,...) {
 
-  call <- match.call()
-  #if (missing(data)) 
-  #data <- environment(formula)
   if (!is.null(subset)) {
     x <- x[subset]
     y <- y[subset]
@@ -23,47 +19,53 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL,
   x <- x[na.ok]
   y <- y[na.ok]
   
-  #if (frame) {
-  #  dat.out <- data.frame(x, y)
-  #}
-
-  if (is.null(lowerend)) {
-	    lowerend = min(x)
-	}
-  if (is.null(upperend)) {
-	  upperend = max(x)
-	}
-	x_low = lowerend
-	x_upp = upperend
-
-  if (is.null(col.lines)) {
-    col.lines="blue"
-  }
-  
-  if (is.null(col.dots)) {
-    col.dots=1
-  }
-  
-  if (is.null(type.dots)) {
-    type.dots=20
-  }
-  
-	size=sum(x>=x_low & x<=x_upp)
-  y=y[x>=x_low & x<=x_upp]
-  x=x[x>=x_low & x<=x_upp]
-  
+  if (is.null(col.lines)) col.lines = "blue"
+  if (is.null(col.dots))  col.dots  = 1
+  if (is.null(type.dots)) type.dots = 20
+    
 	x_l = x[x<c]; x_r = x[x>=c]	
   y_l = y[x<c];	y_r = y[x>=c]
-	x.min = min(x);	x.max = max(x)
-	range_l = max(x_l) - min(x_l)
+	x_min = min(x);	x_max = max(x)
+	range_l = c - min(x_l)
 	n_l = length(x_l)
-	range_r = max(x_r) - min(x_r)
+	range_r = max(x_r) - c
 	n_r = length(x_r)
 	n = n_l + n_r
   meth="es"
+  
+  if (is.null(scale)) {
+    scale = scale_l = scale_r = 1  
+  } else{
+    if (length(scale)==1) scale_l = scale_r = scale
+    if (length(scale)==2) {
+      scale_l = scale[1]
+      scale_r = scale[2]
+    }
+  }
+  
+  if (!is.null(nbins)) {
+    if (length(nbins)==1) nbins_l = nbins_r = nbins
+    if (length(nbins)==2) {
+      nbins_l = nbins[1]
+      nbins_r = nbins[2]
+    }
+  }
+  
+  if (is.null(h)) {
+    h_l = range_l
+		h_r = range_r
+  } else{
+    if (length(h)==1) h_l = h_r = h
+    if (length(h)==2) {
+      h_l = h[1]
+      h_r = h[2]
+    }
+  }
+  k=4
+  
   #####********************* ERRORS
   exit=0
-	if (c<=x.min | c>=x.max){
+	if (c<=x_min | c>=x_max){
 		print("c should be set within the range of x")
 		exit = 1
 	}
@@ -73,7 +75,7 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL,
 		exit = 1
 	}
 
-	if (scale<=0 |scalel<=0 |scaler<=0){
+	if (scale<=0 |scale_l<=0 |scale_r<=0){
 		print("scale should be a positive number")
 		exit = 1
 	}
@@ -85,197 +87,204 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL,
 		exit = 1
 	}
 
-	if (exit>0) {
-		stop()
-	}
-
-	p1 = p+1
-  compute =0
-
+	if (exit>0) stop()
+	
+	###################################################################
   rp_l = matrix(NA,n_l,p+1);  rp_r = matrix(NA,n_r,p+1)
-  for (j in 1:p1) {
+  for (j in 1:(p+1)) {
     rp_l[,j] = x_l^(j-1)
     rp_r[,j] = x_r^(j-1)
   }
-  gamma_p1_l = lm(y_l~rp_l-1)$coeff   
-  gamma_p1_r = lm(y_r~rp_r-1)$coeff
   
-  mu0_p1_l = rp_l%*%gamma_p1_l;	mu0_p1_r = rp_r%*%gamma_p1_r
+  wh_l = rdrobust_kweight(x_l,c,h_l,kernel)
+  wh_r = rdrobust_kweight(x_r,c,h_r,kernel)
+  select_l = wh_l> 0
+  select_r = wh_r> 0
+  n_h_l=sum(select_l)
+  n_h_r=sum(select_r)
   
-  J_star_orig=c(numbinl, numbinr)
+  gamma_p1_l = qrXXinv((sqrt(wh_l)*rp_l))%*%crossprod(rp_l*wh_l, y_l)	
+  gamma_p1_r = qrXXinv((sqrt(wh_r)*rp_r))%*%crossprod(rp_r*wh_r, y_r)
   
-  y_l.sq = y_l^2
-  y_r.sq = y_r^2
-  gamma_p2_l = lm(y_l.sq~rp_l-1)$coeff
-  gamma_p2_r = lm(y_r.sq~rp_r-1)$coeff
+  y_hat_l = rp_l%*%gamma_p1_l
+  y_hat_r = rp_r%*%gamma_p1_r
   
-	### Bias w/sample
-
-	drp_l = matrix(NA,n_l,p);	drp_r = matrix(NA,n_r,p)
-	for (j in 1:p) {
-		drp_l[,j] = j*x_l^(j-1)
-		drp_r[,j] = j*x_r^(j-1)
-	}
-  mu1_hat_l = drp_l%*%(gamma_p1_l[2:p1])
-	mu1_hat_r = drp_r%*%(gamma_p1_r[2:p1])
-
-  ######################### ES
-  ind.l = order(x_l); ind.r = order(x_r)
-  x.i.l = x_l[ind.l]; x.i.r = x_r[ind.r]
-  y.i.l = y_l[ind.l]; y.i.r = y_r[ind.r]
-
-  dxi.l=(x.i.l[2:length(x.i.l)]-x.i.l[1:(length(x.i.l)-1)])
-  dxi.r=(x.i.r[2:length(x.i.r)]-x.i.r[1:(length(x.i.r)-1)])
-  dyi.l=(y.i.l[2:length(y.i.l)]-y.i.l[1:(length(y.i.l)-1)])
-  dyi.r=(y.i.r[2:length(y.i.r)]-y.i.r[1:(length(y.i.r)-1)])
-
-  x.bar.i.l = (x.i.l[2:length(x.i.l)]+x.i.l[1:(length(x.i.l)-1)])/2
-  x.bar.i.r = (x.i.r[2:length(x.i.r)]+x.i.r[1:(length(x.i.r)-1)])/2
-  rp.i_l  = matrix(NA,n_l-1,p+1); rp.i_r= matrix(NA,n_r-1,p+1)
-  drp.i_l = matrix(NA,n_l-1,p); drp.i_r = matrix(NA,n_r-1,p)
-
-  for (j in 1:p1) {
-    rp.i_l[,j] = x.bar.i.l^(j-1)
-    rp.i_r[,j] = x.bar.i.r^(j-1)
-  }
-
-  for (j in 1:p) {
-    drp.i_l[,j] = j*x.bar.i.l^(j-1)
-    drp.i_r[,j] = j*x.bar.i.r^(j-1)
+  X_l = Yhat_l = matrix(NA,n_l,1)
+  X_r = Yhat_r = matrix(NA,n_r,1)
+  X_l[select_l] = x_l[select_l]
+  X_r[select_r] = x_r[select_r]
+  Yhat_l[select_l]=y_hat_l[select_l]
+  Yhat_r[select_r]=y_hat_r[select_r]
+  
+  x_sup = c(X_l , X_r)
+  y_hat = c(Yhat_l , Yhat_r)	
+  
+  #**** Optimal Bins (using polynomial order k ***********
+  rk_l = matrix(NA,n_l,(k+1))
+  rk_r = matrix(NA,n_r,(k+1))
+  
+  for (j in 1:(k+1)) {
+    rk_l[,j] = x_l^(j-1)
+    rk_r[,j] = x_r^(j-1)
   }
   
-  mu0.i_hat_l = rp.i_l%*%gamma_p1_l;  mu0.i_hat_r = rp.i_r%*%gamma_p1_r
-  mu2.i_hat_l = rp.i_l%*%gamma_p2_l;  mu2.i_hat_r = rp.i_r%*%gamma_p2_r
+  gamma_k1_l = qrXXinv(rk_l)%*%crossprod(rk_l, y_l)  
+  gamma_k2_l = qrXXinv(rk_l)%*%crossprod(rk_l, y_l^2)
+  gamma_k1_r = qrXXinv(rk_r)%*%crossprod(rk_r, y_r)  
+  gamma_k2_r = qrXXinv(rk_r)%*%crossprod(rk_r, y_r^2)
   
-  mu0_hat_l = rp_l%*%gamma_p1_l;  mu0_hat_r = rp_r%*%gamma_p1_r
-  mu2_hat_l = rp_l%*%gamma_p2_l;  mu2_hat_r = rp_r%*%gamma_p2_r
+                   
+  #*** Bias w/sample
+  mu0_k1_l = rk_l%*%gamma_k1_l
+  mu0_k1_r = rk_r%*%gamma_k1_r
+  mu0_k2_l = rk_l%*%gamma_k2_l
+  mu0_k2_r = rk_r%*%gamma_k2_r
+  drk_l = matrix(NA,n_l,k)
+  drk_r = matrix(NA,n_r,k)
+  for (j in 1:k) {
+    drk_l[,j] = j*x_l^(j-1)
+    drk_r[,j] = j*x_r^(j-1)
+  }
+                     
+  ind_l = order(x_l); ind_r = order(x_r)
+  x_i_l = x_l[ind_l] 
+  y_i_l = y_l[ind_l]
   
-  mu1.i_hat_l = drp.i_l%*%(gamma_p1_l[2:p1]);  mu1.i_hat_r = drp.i_r%*%(gamma_p1_r[2:p1])
+  x_i_r = x_r[ind_r] 
+  y_i_r = y_r[ind_r]
+                       
+  dxi_l=(x_i_l[2:length(x_i_l)]-x_i_l[1:(length(x_i_l)-1)])
+  dxi_r=(x_i_r[2:length(x_i_r)]-x_i_r[1:(length(x_i_r)-1)])
+  dyi_l=(y_i_l[2:length(y_i_l)]-y_i_l[1:(length(y_i_l)-1)])
+  dyi_r=(y_i_r[2:length(y_i_r)]-y_i_r[1:(length(y_i_r)-1)])
+                       
+  x_bar_i_l = (x_i_l[2:length(x_i_l)]+x_i_l[1:(length(x_i_l)-1)])/2
+  x_bar_i_r = (x_i_r[2:length(x_i_r)]+x_i_r[1:(length(x_i_r)-1)])/2
+                       
+  drk_i_l = matrix(NA,n_l-1,k);	rk_i_l  = matrix(NA,n_l-1,(k+1))
+  drk_i_r = matrix(NA,n_r-1,k);	rk_i_r  = matrix(NA,n_r-1,(k+1))
+                       
+  for (j in 1:(k+1)) {
+  rk_i_l[,j] = x_bar_i_l^(j-1)
+  rk_i_r[,j] = x_bar_i_r^(j-1)
+  }
+                       
+  for (j in 1:k) {
+  drk_i_l[,j] = j*x_bar_i_l^(j-1)
+  drk_i_r[,j] = j*x_bar_i_r^(j-1)
+  }
   
-  sigma2_hat_l.bar = mu2.i_hat_l - mu0.i_hat_l^2
-  sigma2_hat_r.bar = mu2.i_hat_r - mu0.i_hat_r^2
-
+  mu1_i_hat_l = drk_i_l%*%(gamma_k1_l[2:(k+1)])
+  mu1_i_hat_r = drk_i_r%*%(gamma_k1_r[2:(k+1)])
+  
+  mu0_i_hat_l = rk_i_l%*%gamma_k1_l
+  mu0_i_hat_r = rk_i_r%*%gamma_k1_r
+  mu2_i_hat_l = rk_i_l%*%gamma_k2_l
+  mu2_i_hat_r = rk_i_r%*%gamma_k2_r
+                       
+  mu0_hat_l = rk_l%*%gamma_k1_l
+  mu0_hat_r = rk_r%*%gamma_k1_r
+  mu2_hat_l = rk_l%*%gamma_k2_l
+  mu2_hat_r = rk_r%*%gamma_k2_r
+                       
+  mu1_hat_l = drk_l%*%(gamma_k1_l[2:(k+1)])
+  mu1_hat_r = drk_r%*%(gamma_k1_r[2:(k+1)])
+                       
+  mu1_i_hat_l = drk_i_l%*%(gamma_k1_l[2:(k+1)])
+  mu1_i_hat_r = drk_i_r%*%(gamma_k1_r[2:(k+1)])
+  
+  sigma2_hat_l_bar = mu2_i_hat_l - mu0_i_hat_l^2
+  sigma2_hat_r_bar = mu2_i_hat_r - mu0_i_hat_r^2
   sigma2_hat_l = mu2_hat_l - mu0_hat_l^2
   sigma2_hat_r = mu2_hat_r - mu0_hat_r^2
   
   J.fun = function(B,V) {ceiling((((2*B)/V)*n)^(1/3))}
-  var.y_l = var(y_l)
-  var.y_r = var(y_r)
-
-  B.es.hat.dw = c( ((c-x.min)^2/(12*n))*sum(mu1_hat_l^2),((x.max-c)^2/(12*n))*sum(mu1_hat_r^2))
-  V.es.hat.dw = c((0.5/(c-x.min))*sum(dxi.l*dyi.l^2),(0.5/(x.max-c))*sum(dxi.r*dyi.r^2))
-  V.es.chk.dw = c((1/(c-x.min))*sum(dxi.l*sigma2_hat_l.bar),(1/(x.max-c))*sum(dxi.r*sigma2_hat_r.bar))
-  J.es.hat.dw = J.fun(B.es.hat.dw, V.es.hat.dw)
-  J.es.chk.dw = J.fun(B.es.hat.dw, V.es.chk.dw)
-    
-  B.qs.hat.dw = c((n_l^2/(24*n))*sum(dxi.l^2*mu1.i_hat_l^2), (n_r^2/(24*n))*sum(dxi.r^2*mu1.i_hat_r^2))
-  V.qs.hat.dw = c((1/(2*n_l))*sum(dyi.l^2),(1/(2*n_r))*sum(dyi.r^2))
-  V.qs.chk.dw = c((1/n_l)*sum(sigma2_hat_l), (1/n_r)*sum(sigma2_hat_r))
-  J.qs.hat.dw = J.fun(B.qs.hat.dw, V.qs.hat.dw)
-  J.qs.chk.dw = J.fun(B.qs.hat.dw, V.qs.chk.dw)
+  var_y_l = var(y_l)
+  var_y_r = var(y_r)
   
-  J.es.hat.mv  = c(ceiling((var.y_l/V.es.hat.dw[1])*(n/log(n)^2)), ceiling((var.y_r/V.es.hat.dw[2])*(n/log(n)^2)))
-  J.es.chk.mv  = c(ceiling((var.y_l/V.es.chk.dw[1])*(n/log(n)^2)), ceiling((var.y_r/V.es.chk.dw[2])*(n/log(n)^2)))
-  J.qs.hat.mv  = c(ceiling((var.y_l/V.qs.hat.dw[1])*(n/log(n)^2)), ceiling((var.y_r/V.qs.hat.dw[2])*(n/log(n)^2)))
-  J.qs.chk.mv  = c(ceiling((var.y_l/V.qs.chk.dw[1])*(n/log(n)^2)), ceiling((var.y_r/V.qs.chk.dw[2])*(n/log(n)^2)))
+  B_es_hat_dw = c( ((c-x_min)^2/(12*n))*sum(mu1_hat_l^2),((x_max-c)^2/(12*n))*sum(mu1_hat_r^2))
+  V_es_hat_dw = c((0.5/(c-x_min))*sum(dxi_l*dyi_l^2),(0.5/(x_max-c))*sum(dxi_r*dyi_r^2))
+  V_es_chk_dw = c((1/(c-x_min))*sum(dxi_l*sigma2_hat_l_bar),(1/(x_max-c))*sum(dxi_r*sigma2_hat_r_bar))
+  J_es_hat_dw = J.fun(B_es_hat_dw, V_es_hat_dw)
+  J_es_chk_dw = J.fun(B_es_hat_dw, V_es_chk_dw)
   
-  ######################### ES
-  #var2.y_l = IQR(y_l) / 1.349
-  #var2.y_r = IQR(y_r) / 1.349
-  #B.es.hat = c(((c-x.min)^2/12)*sum(dxi.l*mu1.i_hat_l^2), ((x.max-c)^2/12)*sum(dxi.r*mu1.i_hat_r^2))
-  #V.es.hat = c((n/(4*(c-x.min)))*sum(dxi.l^2*dyi.l^2), (n/(4*(x.max-c)))*sum(dxi.r^2*dyi.r^2))
-  #J.es.hat = J.fun(B.es.hat,V.es.hat)
-  #B.es.hat.dw = c( ((c-x.min)^2/(12*n))*sum(mu1.i_hat_l^2),((x.max-c)^2/(12*n))*sum(mu1.i_hat_r^2))
-  #V.es.chk = c((n/(2*(c-x.min)))*sum(dxi.l^2*sigma2_hat_l.bar),(n/(2*(x.max-c)))*sum(dxi.r^2*sigma2_hat_r.bar))
-  #J.es.chk = J.fun(B.es.hat,V.es.chk)
-    
-  ######################### QS
-  #V.qs.hat = c((n/(2*n_l))*sum(dxi.l*dyi.l^2),(n/(2*n_r))*sum(dxi.r*dyi.r^2))
-  #B.qs.hat = c((n_l^2/72)*sum(dxi.l^3*mu1.i_hat_l^2), (n_r^2/72)*sum(dxi.r^3*mu1.i_hat_r^2))
-  #J.qs.hat = J.fun(B.qs.hat,V.qs.hat)
-	#V.qs.chk = c((n/n_l)*sum(dxi.l*sigma2_hat_l.bar),(n/n_r)*sum(dxi.r*sigma2_hat_r.bar))
-  #J.qs.chk = J.fun(B.qs.hat,V.qs.chk)
-  #B.qs.hat.dw = c((n_l^1/48)*sum(dxi.l^2*mu1.i_hat_l^2), (n_r^1/48)*sum(dxi.r^2*mu1.i_hat_r^2))
+  B_qs_hat_dw = c((n_l^2/(24*n))*sum(dxi_l^2*mu1_i_hat_l^2), (n_r^2/(24*n))*sum(dxi_r^2*mu1_i_hat_r^2))
+  V_qs_hat_dw = c((1/(2*n_l))*sum(dyi_l^2),(1/(2*n_r))*sum(dyi_r^2))
+  V_qs_chk_dw = c((1/n_l)*sum(sigma2_hat_l), (1/n_r)*sum(sigma2_hat_r))
+  J_qs_hat_dw = J.fun(B_qs_hat_dw, V_qs_hat_dw)
+  J_qs_chk_dw = J.fun(B_qs_hat_dw, V_qs_chk_dw)
   
+  J_es_hat_mv  = c(ceiling((var_y_l/V_es_hat_dw[1])*(n/log(n)^2)), ceiling((var_y_r/V_es_hat_dw[2])*(n/log(n)^2)))
+  J_es_chk_mv  = c(ceiling((var_y_l/V_es_chk_dw[1])*(n/log(n)^2)), ceiling((var_y_r/V_es_chk_dw[2])*(n/log(n)^2)))
+  J_qs_hat_mv  = c(ceiling((var_y_l/V_qs_hat_dw[1])*(n/log(n)^2)), ceiling((var_y_r/V_qs_hat_dw[2])*(n/log(n)^2)))
+  J_qs_chk_mv  = c(ceiling((var_y_l/V_qs_chk_dw[1])*(n/log(n)^2)), ceiling((var_y_r/V_qs_chk_dw[2])*(n/log(n)^2)))
   
+  #########################################################
   if (binselect=="es") {
-    J_star_orig = J.es.hat.dw
+    J_star_orig = J_es_hat_dw
     meth="es"
     binselect_type="IMSE-optimal evenly-spaced method using spacings estimators"
-    J_IMSE = J.es.hat.dw
-    J_MV   = J.es.hat.mv
+    J_IMSE = J_es_hat_dw
+    J_MV   = J_es_hat_mv
   }
-
   if (binselect=="espr") {
-    J_star_orig = J.es.chk.dw
+    J_star_orig = J_es_chk_dw
     meth="es"
     binselect_type="IMSE-optimal evenly-spaced method using polynomial regression"
-    J_IMSE = J.es.chk.dw
-    J_MV   = J.es.chk.mv
+    J_IMSE = J_es_chk_dw
+    J_MV   = J_es_chk_mv
   }
-  
   if (binselect=="esmv" ) {
-    J_star_orig = J.es.hat.mv
+    J_star_orig = J_es_hat_mv
     meth="es"
     binselect_type="mimicking variance evenly-spaced method using spacings estimators"
-    J_IMSE = J.es.hat.dw
-    J_MV   = J.es.hat.mv
+    J_IMSE = J_es_hat_dw
+    J_MV   = J_es_hat_mv
   }
-  
   if (binselect=="esmvpr" ) {
-    J_star_orig = J.es.chk.mv
+    J_star_orig = J_es_chk_mv
     meth="es"
     binselect_type="mimicking variance evenly-spaced method using polynomial regression"
-    J_IMSE = J.es.chk.dw
-    J_MV   = J.es.chk.mv
+    J_IMSE = J_es_chk_dw
+    J_MV   = J_es_chk_mv
   }
-  
-  
   if (binselect=="qs" ) {
-    J_star_orig = J.qs.hat.dw
+    J_star_orig = J_qs_hat_dw
     meth="qs"
     binselect_type="IMSE-optimal quantile-spaced method using spacings estimators"
-    J_IMSE = J.qs.hat.dw
-    J_MV   = J.qs.hat.mv
+    J_IMSE = J_qs_hat_dw
+    J_MV   = J_qs_hat_mv
   }
-  
   if (binselect=="qspr" ) {
-    J_star_orig = J.qs.chk.dw
+    J_star_orig = J_qs_chk_dw
     meth="qs"
     binselect_type="IMSE-optimal quantile-spaced method using polynomial regression"
-    J_IMSE = J.qs.chk.dw
-    J_MV   = J.qs.chk.mv
+    J_IMSE = J_qs_chk_dw
+    J_MV   = J_qs_chk_mv
   }
   if (binselect=="qsmv" ) {
-    J_star_orig = J.qs.hat.mv
+    J_star_orig = J_qs_hat_mv
     meth="qs"
     binselect_type="mimicking variance quantile-spaced method using spacings estimators"
-    J_IMSE = J.qs.hat.dw
-    J_MV   = J.qs.hat.mv
+    J_IMSE = J_qs_hat_dw
+    J_MV   = J_qs_hat_mv
   }
-  
-  
   if (binselect=="qsmvpr" ) {
-    J_star_orig = J.qs.chk.mv
+    J_star_orig = J_qs_chk_mv
     meth="qs"
     binselect_type="mimicking variance quantile-spaced method using polynomial regression"
-    J_IMSE = J.qs.chk.dw
-    J_MV   = J.qs.chk.mv
+    J_IMSE = J_qs_chk_dw
+    J_MV   = J_qs_chk_mv
   }
 
-  if (scale>1 & scalel==1 & scaler==1){
-    scalel=scaler=scale
-  }
-  
-  J_star_l = scalel*J_star_orig[1]
-  J_star_r = scaler*J_star_orig[2]
+  J_star_l = scale_l*J_star_orig[1]
+  J_star_r = scale_r*J_star_orig[2]
 
-  if (!is.null(numbinl)&!is.null(numbinr)) {
-    J_star_l = numbinl
-    J_star_r = numbinr
+  if (!is.null(nbins)) {
+    J_star_l = nbins_l
+    J_star_r = nbins_r
     binselect_type="manually evenly spaced"
   }
-  
   
   scale_l = J_star_l / J_IMSE[1]
   scale_r = J_star_r / J_IMSE[2]
@@ -287,21 +296,15 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL,
     jumps_l=seq(min(x_l),max(x_l),jump_l)
     jumps_r=seq(min(x_r),max(x_r),jump_r)
     #binselect_type="Evenly-Spaced"
-  }
-  else if (meth=="qs") {
+  }   else if (meth=="qs") {
     jumps_l=quantile(x_l,probs=seq(0,1,1/J_star_l))
     jumps_r=quantile(x_r,probs=seq(0,1,1/J_star_r))
    # binselect_type="Quantile-Spaced"
   }
   
-  for (k in 1:(J_star_l-1)) {
-	  bin_x_l[x_l>=jumps_l[k] & x_l<jumps_l[k+1]] = -J_star_l+k-1 
-	}
-    bin_x_l[x_l>=jumps_l[(J_star_l)]] = -1
-    
-	for (k in 1:(J_star_r-1)) {
-	  bin_x_r[x_r>=jumps_r[k] & x_r<jumps_r[k+1]] = k 
-	}
+  for (k in 1:(J_star_l-1)) bin_x_l[x_l>=jumps_l[k] & x_l<jumps_l[k+1]] = -J_star_l+k-1 
+	bin_x_l[x_l>=jumps_l[(J_star_l)]] = -1
+  for (k in 1:(J_star_r-1)) bin_x_r[x_r>=jumps_r[k] & x_r<jumps_r[k+1]] = k 
 	bin_x_r[x_r>=jumps_r[(J_star_r)]] = J_star_r
   
   bin_xlmean=bin_ylmean=rep(0,J_star_l)
@@ -316,6 +319,10 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL,
 	  #bin_xrmean[k]=mean(x_r[bin_x_r==k])
 	  bin_yrmean[k]=mean(y_r[bin_x_r==k]) 
 	}
+	
+	bin_xlmean[J_star_l]=mean(c(jumps_l[J_star_l],c))
+	bin_xrmean[J_star_r]=mean(c(jumps_r[J_star_r],max(x_r)))
+  
   
   bin_x=c(bin_x_l,bin_x_r)
   bin_xmean=c(bin_xlmean,bin_xrmean)
@@ -323,6 +330,8 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL,
 	x_sup = c(x_l, x_r)
 	#y_hat = c(mu0_p1_l, mu0_p1_r)
   
+
+	
   if (hide=="FALSE") {
   
   if (is.null(title)){
@@ -345,21 +354,56 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL,
     y.lim=c(min(c(y_l,y_r)),max(c(y_l,y_r)))
   }
     par=par
-    plot(bin_xmean[order(bin_xmean)],bin_ymean[order(bin_xmean)], main=title, xlab=x.label, ylab=y.label, ylim=y.lim, xlim=x.lim, col=col.dots, pch=type.dots,...)
-	  #points(x_l[order(x_l)],mu0_p1_l[order(x_l)],type="l",col=2) 
-	  #points(x_r[order(x_r)],mu0_p1_r[order(x_r)],type="l",col=2)  
-    lines(x_l[order(x_l)],mu0_p1_l[order(x_l)],type="l",col=col.lines) 
-    lines(x_r[order(x_r)],mu0_p1_r[order(x_r)],type="l",col=col.lines)  
-    abline(v=c)
-  }
+    if (is.null(ci)) {
+      plot(bin_xmean,bin_ymean, main=title, xlab=x.label, ylab=y.label, ylim=y.lim, xlim=x.lim, col=col.dots, pch=type.dots,...)
+  	  #points(x_l[order(x_l)],mu0_p1_l[order(x_l)],type="l",col=2) 
+  	  #points(x_r[order(x_r)],mu0_p1_r[order(x_r)],type="l",col=2)  
+      lines(x_l[order(x_l)],y_hat_l[order(x_l)],type="l",col=col.lines) 
+      lines(x_r[order(x_r)],y_hat_r[order(x_r)],type="l",col=col.lines)  
+      abline(v=c)
+    } else {
+      
+         bin_ySD_l=bin_yN_l=bin_ySD_r=bin_yN_r=0
+         for (j in 1:(J_star_l)) {
+          bin_ySD_l[j]=sd(y_l[bin_x_l==-j])
+          bin_yN_l[j]=length(y_l[bin_x_l==-j])
+        }
+        
+        for (j in 1:(J_star_r)) {
+          bin_ySD_r[j]=sd(y_r[bin_x_r==j])
+          bin_yN_r[j]=length(y_r[bin_x_r==j])
+        }
+        
+      bin_ySD_l[is.na(bin_ySD_l)]=0
+      bin_ySD_r[is.na(bin_ySD_r)]=0
+      bin_ySD=c(rev(bin_ySD_l),bin_ySD_r)
+      bin_yN=c(rev(bin_yN_l),bin_yN_r)
+      quant = -qnorm(((1-(ci/100))/2))
+      cil_bin = bin_ymean - quant*bin_ySD/sqrt(bin_yN)
+      cir_bin = bin_ymean + quant*bin_ySD/sqrt(bin_yN)
+    
+       
+     if (shade==TRUE){
+      plot(bin_xmean,bin_ymean, main=title, xlab=x.label, ylab=y.label, ylim=y.lim, xlim=x.lim, col=col.dots, pch=type.dots,...)
+      polygon(c(rev(bin_xmean),bin_xmean),c(rev(cil_bin),cir_bin),col = "grey75")
+      lines(x_l[order(x_l)],y_hat_l[order(x_l)],type="l",col=col.lines) 
+      lines(x_r[order(x_r)],y_hat_r[order(x_r)],type="l",col=col.lines)  
+      abline(v=c)
+     } else {
+       plot(bin_xmean,bin_ymean, main=title, xlab=x.label, ylab=y.label, ylim=y.lim, xlim=x.lim, col=col.dots, pch=type.dots,...)
+       arrows(bin_xmean,cil_bin,bin_xmean,cir_bin,code=3,length=0.1,angle=90,col='grey')
+       lines(x_l[order(x_l)],y_hat_l[order(x_l)],type="l",col=col.lines) 
+       lines(x_r[order(x_r)],y_hat_r[order(x_r)],type="l",col=col.lines)  
+       abline(v=c)
+     }
+    }
+    
+    }
 
-#  if (compute==1) {
-    
-    
     tabl1.str=matrix(NA,14,2)
     tabl1.str[1,]  = formatC(c(n_l,n_r),digits=0, format="f")
     tabl1.str[2,]  = formatC(c(p,p),digits=0, format="f")
-    tabl1.str[3,]  = formatC(c(scalel,scaler),digits=0, format="f") 
+    tabl1.str[3,]  = formatC(c(scale_l,scale_r),digits=0, format="f") 
     tabl1.str[4,]  = c("","")
     tabl1.str[5,]  = formatC(c(J_star_l,J_star_r),digits=0, format="f")  
     tabl1.str[6,]  = formatC(c(jump_l,jump_r),digits=4, format="f") 
@@ -378,7 +422,7 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL,
     results=matrix(NA,10,2)
     results[1,] = c(n_l,n_r)
     results[2,] = c(p,p)
-    results[3,] = c(scalel,scaler)
+    results[3,] = c(scale_l,scale_r)
     results[4,] = c(J_star_l,J_star_r)
     results[5,] = c(jump_l,jump_r)
     results[6,] = J_IMSE
@@ -398,7 +442,6 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, numbinl=NULL, numbinr=NULL,
     out$call <- match.call()
     class(out) <- "rdplot"
     return(invisible(out))
- # }
 }
 
 #rdplot <- function(y,x, ...) UseMethod("rdplot")

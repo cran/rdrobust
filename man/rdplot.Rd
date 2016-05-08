@@ -4,19 +4,19 @@
 \alias{summary.rdplot}
 \title{Data-Driven Regression Discontinuity Plots}
 \description{
- \code{\link{rdplot}} implements several data-driven RD plots, using either evenly-spaced or quantile-spaced partitioning.  Two type of RD plots are constructed:  (i) RD plots with binned sample means tracing out the underlying regression function (IMSE-optimal selectors), and (ii) RD plots with binned sample means mimicking the underlying variability of the data. For all technical and methodological details see Calonico, Cattaneo and Titiunik (2015a).
- 
-    Calonico, Cattaneo and Titiunik (2015b) provides an introduction to this command. For a review on RD methods see Imbens and Lemieux (2008), Lee and Lemieux (2010), Calonico, Cattaneo and Titiunik (2014a), and references therein.
-    
-    For local polynomial inference methods see the commands \code{\link{rdrobust}} and \code{\link{rdbwselect}}.
 
-    A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014b).
+\code{\link{rdplot}}  implements several data-driven Regression Discontinuity (RD) plots, using either evenly-spaced or quantile-spaced partitioning. Two type of RD plots are constructed: (i) RD plots with binned sample means tracing out the underlying regression function, and (ii) RD plots with binned sample means mimicking the underlying variability of the data. For technical and methodological details see Calonico, Cattaneo and Titiunik (2015a).
+
+Companion commands are: \code{\link{rdrobust}} for point estimation and inference procedures, and \code{\link{rdbwselect}} for data-driven bandwidth selection.
+
+A detailed introduction to this command is given in Calonico, Cattaneo and Titiunik (2015b) and Calonico, Cattaneo, Farrell and Titiunik (2016). A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014).
+
+For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://sites.google.com/site/rdpackages/}
 }
 \usage{
-rdplot(y, x, subset = NULL, c = 0, p = 4, 
-          numbinl = NULL, numbinr = NULL, binselect = "esmv", 
-          lowerend = NULL, upperend = NULL, scale = 1, scalel = 1, scaler = 1, 
-          hide = FALSE, par=NULL, title = NULL, x.label = NULL, y.label = NULL, 
+rdplot(y, x, subset = NULL, c = 0, p = 4, nbins = NULL, binselect = "esmv",  scale = NULL,
+          kernel = "uni", h = NULL, hide = FALSE, ci = NULL, shade = FALSE,
+          par=NULL, title = NULL, x.label = NULL, y.label = NULL, 
           x.lim = NULL, y.lim = NULL, col.dots = NULL, col.lines = NULL, 
           type.dots = NULL,...)
 }
@@ -26,8 +26,14 @@ rdplot(y, x, subset = NULL, c = 0, p = 4,
   \item{subset}{an optional vector specifying a subset of observations to be used.}
   \item{c}{specifies the RD cutoff in \code{x}; default is \code{c = 0}.}
   \item{p}{specifies the order of the global-polynomial used to approximate the population conditional mean functions for control and treated units; default is \code{p = 4}.} 
-  \item{numbinl}{specifies the number of bins used to the left of the cutoff, denoted \eqn{J_-}. If not specified, \eqn{J_-} is estimated using the method and options chosen below.}
-    \item{numbinr}{specifies the number of bins used to the right of the cutoff, denoted \eqn{J_+}. If not specified, \eqn{J_+} is estimated using the method and options chosen below.}
+  
+  \item{kernel}{specifies the kernel function used to construct the local-polynomial estimator(s). Options are: \code{triangular}, \code{epanechnikov}, and \code{uniform}. Default is \code{kernel=uniform} (i.e., equal/no weighting to all observations on the support of the kernel).}
+
+\item{h}{specifies the bandwidth used to construct the (global) polynomial fits given the kernel choice \code{kernel}.
+If not specified, the bandwidths are chosen to span the full support of the data. If two bandwidths are specified, the first bandwidth is used for the data below the cutoff and the second bandwidth is used for the data above the cutoff.}
+
+  \item{nbins}{specifies the number of bins used to the left of the cutoff, denoted \eqn{J_-}, and to the right of the cutoff, denoted \eqn{J_+}, respectively. If not specified, \eqn{J_+} and \eqn{J_-} are estimated using the method and options chosen below.}
+
 \item{binselect}{specifies the procedure to select the number of bins. This option is available only if \eqn{J_-} and \eqn{J_+} are not set manually. Options are:  
 
         \code{es}: IMSE-optimal evenly-spaced method using spacings estimators.
@@ -46,12 +52,11 @@ rdplot(y, x, subset = NULL, c = 0, p = 4,
         
         \code{qsmvpr}: mimicking variance quantile-spaced method using polynomial regression.
      }
-    \item{lowerend}{specifies the lower bound for \code{x} to the left of the cutoff. Default is the minimum value in sample.}
-    \item{upperend}{specifies the upper bound for \code{x} to the right of the cutoff. Default is the maximum value in sample.}
-    \item{scale}{specifies a multiplicative factor to be used with the optimal numbers of bins selected. Specifically, the number of bins used for the treatment and control groups will be \code{scale}\eqn{\times \hat{J}_+} and \code{scale}\eqn{\times \hat{J}_-}, where \eqn{\hat{J}_\cdot} denotes the estimated optimal numbers of bins originally computed for each group; default is \code{scale = 1}.}
-  \item{scalel}{same as scale but only for the data to the left of the cutoff.}
-  \item{scaler}{same as scale but only for the data to the right of the cutoff.}
+
+  \item{scale}{specifies a multiplicative factor to be used with the optimal numbers of bins selected. Specifically, the number of bins used for the treatment and control groups will be \code{scale}\eqn{\times \hat{J}_+} and \code{scale}\eqn{\times \hat{J}_-}, where \eqn{\hat{J}_\cdot} denotes the estimated optimal numbers of bins originally computed for each group; default is \code{scale = 1}.}
   \item{hide}{logical. If \code{TRUE}, it omits the RD plot; default is \code{hide = FALSE}.}
+  \item{ci}{optional graphical option to display confidence intervals of selected level for each bin.}
+  \item{shade}{optional graphical option to replace confidence intervals with shaded areas.}
   \item{par}{optional graphical parameters.}
   \item{title}{optional title for the RD plot.}
   \item{x.label}{optional label for the x-axis of the RD plot.}
@@ -69,17 +74,21 @@ rdplot(y, x, subset = NULL, c = 0, p = 4,
   \item{coef}{matrix containing the coefficients of the \eqn{p^{th}} order global polynomial estimated both sides of the cutoff.}
 }
 \references{
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014a. "Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs." \emph{Econometrica} 82(6): 2295-2326, November 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
 
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014b. "Robust Data-Driven Inference in the Regression-Discontinuity Design." \emph{Stata Journal} 14(4): 909-946, 4th Quarter 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016. Regression Discontinuity Designs using Covariates. Working Paper.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2016_wp.pdf}.
 
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2015a. "Optimal Data-Driven Regression Discontinuity Plots." \emph{Journal of the American Statistical Association}, forthcoming.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_JASA.pdf}.
+Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014. Robust Data-Driven Inference in the Regression-Discontinuity Design. Stata Journal 14(4): 909-946.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}.
 
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2015b. "rdrobust: An R Package for Robust Inference in Regression-Discontinuity Designs." \emph{R Journal}, forthcoming. \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_R.pdf}.
+Calonico, S., M. D. Cattaneo, and R. Titiunik. 2015a. Optimal Data-Driven Regression Discontinuity Plots. Journal of the American Statistical Association 110(512): 1753-1769.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_JASA.pdf}.
 
-    Imbens, G., and T. Lemieux. 2008. "Regression Discontinuity Designs: A Guide to Practice." \emph{Journal of Econometrics} 142(2): 615-635.
+Calonico, S., M. D. Cattaneo, and R. Titiunik. 2015b. rdrobust: An R Package for Robust Nonparametric Inference in Regression-Discontinuity Designs. R Journal 7(1): 38-51.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2015_R.pdf}.
 
-    Lee, D. S., and T. Lemieux. 2010. "Regression Discontinuity Designs in Economics." \emph{Journal of Economic Literature} 48(2): 281-355.
+Cattaneo, M. D., B. Frandsen, and R. Titiunik. 2015. Randomization Inference in the Regression Discontinuity Design: An Application to the Study of Party Advantages in the U.S. Senate. Journal of Causal Inference 3(1): 1-24.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}.
     
         
 }
@@ -87,6 +96,8 @@ rdplot(y, x, subset = NULL, c = 0, p = 4,
 Sebastian Calonico, University of Miami, Coral Gables, FL.  \email{scalonico@bus.miami.edu}.
 
 Matias D. Cattaneo, University of Michigan, Ann Arbor, MI.  \email{cattaneo@umich.edu}.
+
+Max H. Farrell, University of Chicago, Chicago, IL. \email{max.farrell@chicagobooth.edu}.
 
 Rocio Titiunik, University of Michigan, Ann Arbor, MI.  \email{titiunik@umich.edu}.
 }

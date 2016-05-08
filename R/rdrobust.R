@@ -6,96 +6,95 @@
 ### version 0.61 03Sep2014
 ### version 0.7  14Oct2014
 ### version 0.8  04Feb2015
+### version 0.9  28Mar2016
 
-rdrobust = function(y, x,  subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NULL, h=NULL, b=NULL, rho=NULL, scalepar=1, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, level=95, all=FALSE) {
+rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, deriv=0, h=NULL, b=NULL, rho=NULL, 
+                    scalepar=1, kernel="tri", bwselect="mserd", scaleregul=1, sharpbw=FALSE, vce="nn",  nnmatch=3, level=95, all=FALSE, subset = NULL) {
   
-  call <- match.call()
-  #if (missing(data)) 
-  #data <- environment(formula)
-
   if (!is.null(subset)) {
     x <- x[subset]
     y <- y[subset]
   }
   
   na.ok <- complete.cases(x) & complete.cases(y)
-    
-  if (!is.null(fuzzy)){
-    type <- "fuzzy"
-    z=fuzzy
-    if (!is.null(subset)) 
-    z <- z[subset]
-    na.ok <- na.ok & complete.cases(z)
+  
+  if (!is.null(cluster)){
+    if (!is.null(subset))  cluster <- cluster[subset]
+    na.ok <- na.ok & complete.cases(cluster)
   } 
-  else {
-    type <- "sharp"
+  
+  if (!is.null(covs)){
+    if (!is.null(subset))  covs <- covs[subset]
+    na.ok <- na.ok & complete.cases(covs)
+  } 
+  
+  if (!is.null(fuzzy)){
+    if (!is.null(subset)) fuzzy <- fuzzy[subset]
+    na.ok <- na.ok & complete.cases(fuzzy)
+  } 
+
+  x = matrix(x[na.ok])
+  y = matrix(y[na.ok])
+  
+  if (!is.null(covs))    covs    = matrix(covs)[na.ok, , drop = FALSE]
+  if (!is.null(fuzzy))   fuzzy   = matrix(  fuzzy[na.ok])
+  if (!is.null(cluster)) cluster = matrix(cluster[na.ok])
+  
+  if (vce=="nn") {
+    order_x = order(x)
+    x = x[order_x,,drop=FALSE]
+    y = y[order_x,,drop=FALSE]
+    if (!is.null(covs))    covs    =  matrix(covs)[order_x,,drop=FALSE]
+    if (!is.null(fuzzy))   fuzzy   =   fuzzy[order_x,,drop=FALSE]
+    if (!is.null(cluster)) cluster = cluster[order_x,,drop=FALSE]
   }
 
-  x <- x[na.ok]
-  y <- y[na.ok]
-  
-  if (type == "fuzzy") 
-    z <- as.double(z[na.ok])
-  #if (frame) {
-  #  if (type == "sharp") {
-  #    dat.out <- data.frame(x, y)
-  #  }
-  #  else {
-  #    dat.out <- data.frame(x, y, z)
-  #  }
-  #}
-  
   kernel = tolower(kernel)
-  bwselect = toupper(bwselect)
+  #bwselect = toupper(bwselect)
   vce = tolower(vce)
   
-  X_l=x[x<c];  X_r=x[x>=c]
-  Y_l=y[x<c];  Y_r=y[x>=c]
+  X_l=x[x<c,,drop=FALSE];  X_r=x[x>=c,,drop=FALSE]
+  Y_l=y[x<c,,drop=FALSE];  Y_r=y[x>=c,,drop=FALSE]
   x_min = min(x);  x_max = max(x)
   N_l = length(X_l);   N_r = length(X_r)
   range_l = abs(max(X_l)-min(X_l));   range_r = abs(max(X_r)-min(X_r))
   N = N_r + N_l
-  m = matches + 1
   quant = -qnorm(abs((1-(level/100))/2))
   
-  #if (deriv==0 & p==0){
-  #  p = 1
-  #}
-  
-  #if (deriv>0 & p==0){
-  #  bwselect = "CCT"
-  #  p = deriv+1
-  #}
-  
-  if (q==0) {
-    q = p+1
+  if (deriv>0 & p<=deriv) {
+   p = deriv + 1
+   q = p+1
   }
-  
-  p1 = p+1;  q1 = q+1;  exit = 0
-  
-  #####################################################   CHECK ERRORS
 
+
+  #####################################################   CHECK ERRORS
+  exit=0
     if (kernel!="uni" & kernel!="uniform" & kernel!="tri" & kernel!="triangular" & kernel!="epa" & kernel!="epanechnikov" & kernel!="" ){
       print("kernel incorrectly specified")
       exit = 1
     }
     
-    if (bwselect!="CCT" & bwselect!="IK" & bwselect!="CV" & bwselect!=""){
-      print("bwselect incorrectly specified")
-      exit = 1
-    }
-    
-    if (vce!="resid" & vce!="nn" & vce!="" & vce!="s2.pob"){ 
-      print("vce incorrectly specified")
-      exit = 1
-    }
+  if  (bwselect!="mserd" & bwselect!="msetwo" & bwselect!="msesum" & bwselect!="msecomb1" & bwselect!="msecomb2" & bwselect!="cerrd" & bwselect!="certwo" & bwselect!="cersum" & bwselect!="cercomb1" & bwselect!="cercomb2" & bwselect!=""){
+    print("bwselect incorrectly specified")  
+    exit = 1
+  }
+  
+  if (bwselect=="CCT" | bwselect=="IK" | bwselect=="CV" | bwselect=="cct" | bwselect=="ik" | bwselect=="cv"){
+    print("bwselect options IK, CCT and CV have been depricated. Please see help for new options")  
+    exit = 1
+  }
+  
+  if (vce!="nn" & vce!="" & vce!="hc1" & vce!="hc2" & vce!="hc3" & vce!="hc0"){ 
+    print("vce incorrectly specified")
+    exit = 1
+  }
     
     if (c<=x_min | c>=x_max){
       print("c should be set within the range of x")
       exit = 1
     }
     
-    if (p<=0 | q<=0 | deriv<0 | matches<=0 ){
+    if (p<=0 | q<=0 | deriv<0 | nnmatch<=0 ){
       print("p,q,deriv and matches should be positive integers")
       exit = 1
     }
@@ -110,18 +109,14 @@ rdrobust = function(y, x,  subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NULL, h=
       exit = 1
     }
     
-    p_round = round(p)/p;  q_round = round(q)/q;  d_round = round(deriv+1)/(deriv+1);  m_round = round(matches)/matches
+    p_round = round(p)/p;  q_round = round(q)/q;  d_round = round(deriv+1)/(deriv+1);  m_round = round(nnmatch)/nnmatch
     
     if (p_round!=1 | q_round!=1 | d_round!=1 | m_round!=1 ){
       print("p,q,deriv and matches should be integer numbers")
       exit = 1
     }
     
-    if (delta>1 | delta<=0){
-      print("delta should be set between 0 and 1")
-      exit = 1
-    }
-    
+
     if (level>100 | level<=0){
       print("level should be set between 0 and 100")
       exit = 1
@@ -134,284 +129,273 @@ rdrobust = function(y, x,  subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NULL, h=
         }
     }
   
-    #if (cvgrid_min<0 | cvgrid_max<0 | cvgrid_length<0 ){
-    #  print("cvgrid_min, cvgrid_max and cvgrid_length should be positive numbers")
-    #  exit = 1
-    #}
-    
-    #if (cvgrid_min>cvgrid_max){
-    #  print("cvgrid_min should be lower than cvgrid_max")
-    #  exit = 1
-    #}
-    
-    if (exit>0) {
-      stop()
-    }
-      
-    if (!is.null(h)) {
-      bwselect = "Manual"
-    }
-  
+    if (exit>0) stop()
+    if (!is.null(h)) bwselect = "Manual"
     if (!is.null(h) & is.null(rho) & is.null(b)) {
       rho = 1
       b = h
     }
-  
-    if (!is.null(h) & !is.null(rho) ) {
-      b = h/rho
-    }
+    if (!is.null(h) & !is.null(rho) ) b = h/rho
     
+  if (kernel=="epanechnikov" | kernel=="epa") {
+    kernel_type = "Epanechnikov"
+  }   else if (kernel=="uniform" | kernel=="uni") {
+    kernel_type = "Uniform"
+  }   else  {
+    kernel_type = "Triangular"
+  }
+
     ############################################################################################
     #print("Preparing data.") 
     
-    if (is.null(h) & bwselect=="IK") {
-      rdbws=rdbwselect(y=y, x=x, c=c, rho=rho, p=p, q=q, bwselect="IK", kernel=kernel, precalc=FALSE, scaleregul=scaleregul)
-      h = rdbws$bws[1,1];      b = rdbws$bws[1,2]
-      bwselect = "IK"
-    }
-    else if (is.null(h) & bwselect=="CV") {
-      rdbws=rdbwselect(y=y, x=x, c=c, rho=rho, p=p, q=q, bwselect="CV", kernel=kernel, precalc=FALSE, delta=delta, cvgrid_min=cvgrid_min, cvgrid_max=cvgrid_max, cvgrid_length=cvgrid_length, scaleregul=scaleregul)
-      h = rdbws$bws[1,1];      b = rdbws$bws[1,2]
-      bwselect = "CV"
-    }
-    else if (is.null(h)) {
-      rdbws=rdbwselect(y=y, x=x, c=c, rho=rho, p=p, q=q, bwselect="CCT", kernel=kernel, precalc=FALSE, matches=matches, vce=vce, scaleregul=scaleregul, deriv=deriv)
-      h = rdbws$bws[1,1];      b = rdbws$bws[1,2]
-      bwselect = "CCT"
-    }
-    
-  
-    if (kernel=="epanechnikov" | kernel=="epa") {
-      kernel_type = "Epanechnikov"
-    }
-    else if (kernel=="uniform" | kernel=="uni") {
-      kernel_type = "Uniform"
-    }
-    else  {
-      kernel_type = "Triangular"
-    }
-    
-  N_l = length(X_l);  N_r = length(X_r)
-  wh_l = kweight(X_l,c,h,kernel);  wh_r = kweight(X_r,c,h,kernel);  
-  wb_l = kweight(X_l,c,b,kernel);  wb_r = kweight(X_r,c,b,kernel)
-  uh_l = (X_l-c)/h;  uh_r = (X_r-c)/h;  uhh_l=uh_l[wh_l>0];  uhh_r=uh_r[wh_r>0]
-  Yh_l  = Y_l[wh_l>0];  Yh_r  = Y_r[wh_r>0];  Yb_l  = Y_l[wb_l>0];  Yb_r  = Y_r[wb_r>0]
-  Xh_l  = X_l[wh_l>0];  Xh_r  = X_r[wh_r>0];  Xb_l  = X_l[wb_l>0];  Xb_r  = X_r[wb_r>0]
-  whh_l = wh_l[wh_l>0]; whh_r = wh_r[wh_r>0]; wbb_l = wb_l[wb_l>0]; wbb_r = wb_r[wb_r>0]
-  
-  if (type == "fuzzy") {
-    T_l  = matrix(z[x<c]);    T_r  = matrix(z[x>=c])
-    Th_l = matrix(T_l[wh_l>0]);    Th_r = matrix(T_r[wh_r>0])
-    Tb_l = matrix(T_l[wb_l>0]);    Tb_r = matrix(T_r[wb_r>0])
-  }
-  
-  Nh_l = length(Xh_l);  Nb_l = length(Xb_l);  Nh_r = length(Xh_r);  Nb_r = length(Xb_r)
-  
-  if (Nh_l<5 | Nh_r<5 | Nb_l<5 | Nb_r<5){ 
-    stop("Too few observations to compute RD estimates")
-  }
+    if (is.null(h)) {
+      rdbws=rdbwselect(y=y, x=x,  covs=covs, cluster=cluster, fuzzy=fuzzy, c=c, deriv=deriv, p=p, q=q, vce=vce, bwselect=bwselect, kernel=kernel, scaleregul=scaleregul, sharpbw=sharpbw)
+      h_l = rdbws$bws[1]
+      h_r = rdbws$bws[2]
+      b_l = rdbws$bws[3]
+      b_r = rdbws$bws[4]
       
-  X_lp   = matrix(c((X_l-c)^0, poly(X_l-c,degree=p,raw=T)),length(X_l),p+1)
-  X_rp   = matrix(c((X_r-c)^0, poly(X_r-c,degree=p,raw=T)),length(X_r),p+1)
-  Xh_lp  = matrix(c((Xh_l-c)^0,poly(Xh_l-c,degree=p,raw=T)),length(Xh_l),p+1)
-  Xh_rp  = matrix(c((Xh_r-c)^0,poly(Xh_r-c,degree=p,raw=T)),length(Xh_r),p+1)
-  
-  X_lq   = matrix(c((X_l-c)^0, poly(X_l-c,degree=q,raw=T)),length(X_l),q+1)
-  X_rq   = matrix(c((X_r-c)^0, poly(X_r-c,degree=q,raw=T)),length(X_r),q+1)
-  Xb_lq  = matrix(c((Xb_l-c)^0,poly(Xb_l-c,degree=q,raw=T)),length(Xb_l),q+1)
-  Xb_rq  = matrix(c((Xb_r-c)^0,poly(Xb_r-c,degree=q,raw=T)),length(Xb_r),q+1)
-  
-  #print("Computing Variance-Covariance Matrix.")
-  
-    sigmah_l = c(rdvce(X=Xh_l, y=Yh_l, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    sigmah_r = c(rdvce(X=Xh_r, y=Yh_r, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    sigmab_l = c(rdvce(X=Xb_l, y=Yb_l, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    sigmab_r = c(rdvce(X=Xb_r, y=Yb_r, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-  
-  #print("Computing RD Estimates.")
-  
-  factor_p = factorial(seq(0,p,1))
-  factor_q = factorial(seq(0,q,1))
-  
-  out.lp=qrreg(Xh_lp,Yh_l,whh_l,sigmah_l) 
-  out.rp=qrreg(Xh_rp,Yh_r,whh_r,sigmah_r)
-  out.lq=qrreg(Xb_lq,Yb_l,wbb_l,sigmab_l)
-  out.rq=qrreg(Xb_rq,Yb_r,wbb_r,sigmab_r)
-  
-  tau_lp = factor_p*out.lp$beta.hat
-  tau_rp = factor_p*out.rp$beta.hat
-  tau_lq = factor_q*out.lq$beta.hat
-  tau_rq = factor_q*out.rq$beta.hat
-  
-  V_lp   = out.lp$Sigma.hat
-  V_rp   = out.rp$Sigma.hat
-  V_lq   = out.lq$Sigma.hat
-  V_rq   = out.rq$Sigma.hat
-  
-  invGamma_lp = out.lp$X.M.X_inv
-  invGamma_rp = out.rp$X.M.X_inv
-  invGamma_lq = out.lq$X.M.X_inv
-  invGamma_rq = out.rq$X.M.X_inv
-
-  if (b>=h){
-    whb_l = wh_l[wb_l>0];   Xb_lp = X_lp[wb_l>0,]
-    whb_r = wh_r[wb_r>0];   Xb_rp = X_rp[wb_r>0,]
-    Psi_lpq = crossprod(sqrt(whb_l*sigmab_l*wbb_l)*Xb_lp,sqrt(whb_l*sigmab_l*wbb_l)*Xb_lq)
-    Psi_rpq = crossprod(sqrt(whb_r*sigmab_r*wbb_r)*Xb_rp,sqrt(whb_r*sigmab_r*wbb_r)*Xb_rq)
-  }
-  else {
-    wbh_l = wb_l[wh_l>0];    Xh_lq = X_lq[wh_l>0,]
-    wbh_r = wb_r[wh_r>0];    Xh_rq = X_rq[wh_r>0,]
-    Psi_lpq = crossprod(sqrt(whh_l*sigmah_l*wbh_l)*Xh_lp,sqrt(whh_l*sigmah_l*wbh_l)*Xh_lq)
-    Psi_rpq = crossprod(sqrt(whh_r*sigmah_r*wbh_r)*Xh_rp,sqrt(whh_r*sigmah_r*wbh_r)*Xh_rq)
-  }
-  
-  Hp = diag(c(1,poly(h,degree=p,raw=T)))
-
-  Cov_l = invGamma_lp%*%Psi_lpq%*%invGamma_lq;  Cov_r = invGamma_rp%*%Psi_rpq%*%invGamma_rq
-  v_lp = t(Xh_lp*whh_l)%*%(uhh_l^(p+1));  v_rp = t(Xh_rp*whh_r)%*%(uhh_r^(p+1)) 
-  BiasConst_lp = factorial(deriv)*Hp%*%invGamma_lp%*%v_lp;  BiasConst_rp = factorial(deriv)*Hp%*%invGamma_rp%*%v_rp
-  Bias_tau = (tau_rq[p+2,1]*BiasConst_rp[deriv+1,1] - tau_lq[p+2,1]*BiasConst_lp[deriv+1,1])*(h^(p+1-deriv)/factorial(p+1))
-  
-  V_l_cl = factorial(deriv)^2*V_lp[deriv+1,deriv+1] 
-  V_r_cl = factorial(deriv)^2*V_rp[deriv+1,deriv+1]  
-  V_l_rb = factorial(deriv)^2*V_lp[deriv+1,deriv+1] + factorial(p+1)^2*V_lq[p+2,p+2]*(BiasConst_lp[deriv+1]*h^(p+1-deriv)/factorial(p+1))^2 - 2*factorial(deriv)*factorial(p+1)*Cov_l[deriv+1,p+2]*(BiasConst_lp[deriv+1]*h^(p+1-deriv)/factorial(p+1))
-  V_r_rb = factorial(deriv)^2*V_rp[deriv+1,deriv+1] + factorial(p+1)^2*V_rq[p+2,p+2]*(BiasConst_rp[deriv+1]*h^(p+1-deriv)/factorial(p+1))^2 - 2*factorial(deriv)*factorial(p+1)*Cov_r[deriv+1,p+2]*(BiasConst_rp[deriv+1]*h^(p+1-deriv)/factorial(p+1))
-  V_cl   = scalepar^2*(V_l_cl + V_r_cl)
-  V_rb   = scalepar^2*(V_l_rb + V_r_rb)
-    
-  tau_Y = c(scalepar*(tau_rp[deriv+1,1] - tau_lp[deriv+1,1]), scalepar*(tau_rp[deriv+1,1] - tau_lp[deriv+1,1] - Bias_tau), scalepar*(tau_rp[deriv+1,1] - tau_lp[deriv+1,1] - Bias_tau))
-  se_Y  = c(sqrt(V_cl),sqrt(V_cl),sqrt(V_rb))
-  t_Y  =  tau_Y/se_Y
-  pv_Y = 2*pnorm(-abs(t_Y))
-  ci_Y = matrix(NA,nrow=3,ncol=2)
-  rownames(ci_Y)=c("Conventional","Bias-Corrected","Robust")
-  colnames(ci_Y)=c("Lower","Upper")
-  ci_Y[1,] = c(tau_Y[1] - quant*se_Y[1], tau_Y[1] + quant*se_Y[1])
-  ci_Y[2,] = c(tau_Y[2] - quant*se_Y[2], tau_Y[2] + quant*se_Y[2])
-  ci_Y[3,] = c(tau_Y[3] - quant*se_Y[3], tau_Y[3] + quant*se_Y[3])
-    
-  if (type == "fuzzy") {
-    # First Stage 
-    sigmah_T_l = c(rdvce(X=Xh_l, y=Th_l, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    sigmah_T_r = c(rdvce(X=Xh_r, y=Th_r, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    sigmab_T_l = c(rdvce(X=Xb_l, y=Tb_l, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    sigmab_T_r = c(rdvce(X=Xb_r, y=Tb_r, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    out.lp = qrreg(Xh_lp, Th_l, whh_l, sigmah_T_l) 
-    out.rp = qrreg(Xh_rp, Th_r, whh_r, sigmah_T_r)
-    out.lq = qrreg(Xb_lq, Tb_l, wbb_l, sigmab_T_l)
-    out.rq = qrreg(Xb_rq, Tb_r, wbb_r, sigmab_T_r)
-    tau_T_lp = factor_p*out.lp$beta.hat
-    tau_T_rp = factor_p*out.rp$beta.hat
-    tau_T_lq = factor_q*out.lq$beta.hat
-    tau_T_rq = factor_q*out.rq$beta.hat
-    V_T_lp   = out.lp$Sigma.hat;    V_T_rp   = out.rp$Sigma.hat
-    V_T_lq   = out.lq$Sigma.hat;    V_T_rq   = out.rq$Sigma.hat
-    invGamma_T_lp = out.lp$X.M.X_inv;    invGamma_T_rp = out.rp$X.M.X_inv
-    invGamma_T_lq = out.lq$X.M.X_inv;    invGamma_T_rq = out.rq$X.M.X_inv
-    
-    if (b>=h){
-      Psi_T_lpq = t(Xb_lp*c(whb_l*sigmab_T_l*wbb_l))%*%Xb_lq
-      Psi_T_rpq = t(Xb_rp*c(whb_r*sigmab_T_r*wbb_r))%*%Xb_rq
+      if (!is.null(rho)) {
+        b_l = h_l/rho
+    		b_r = h_r/rho
+      }
+      
+    } else{
+      if (length(h)==1) h_l = h_r = h
+      if (length(h)==2) {
+        h_l = h[1]
+        h_r = h[2]
+      }
+      if (is.null(b)) {
+        b_l = h_l
+        b_r = h_r
+      } else {
+        if (length(b)==1) b_l = b_r = b
+        if (length(b)==2) {
+          b_l = b[1]
+          b_r = b[2]
+        }  
+      }  
     }
-    else {
-      Psi_T_lpq = t(Xh_lp*c(whh_l*sigmah_T_l*wbh_l))%*%Xh_lq
-      Psi_T_rpq = t(Xh_rp*c(whh_r*sigmah_T_r*wbh_r))%*%Xh_rq
-    } 
-    
-    Cov_T_l = invGamma_T_lp%*%Psi_T_lpq%*%invGamma_T_lq
-    Cov_T_r = invGamma_T_rp%*%Psi_T_rpq%*%invGamma_T_rq
-    Bias_T_tau = (tau_T_rq[p+2,1]*BiasConst_rp[deriv+1,1] - tau_T_lq[p+2,1]*BiasConst_lp[deriv+1,1])*(h^(p+1-deriv)/factorial(p+1))
-    V_T_l_cl = factorial(deriv)^2*V_T_lp[deriv+1,deriv+1]
-    V_T_r_cl = factorial(deriv)^2*V_T_rp[deriv+1,deriv+1]  
-    V_T_cl   = V_T_l_cl + V_T_r_cl 
-    V_T_l_rb = V_T_l_cl + factorial(p+1)^2*V_T_lq[p+2,p+2]*(BiasConst_lp[deriv+1]*h^(p+1-deriv)/factorial(p+1))^2 - 2*factorial(deriv)*factorial(p+1)*Cov_T_l[deriv+1,p+2]*(BiasConst_lp[deriv+1]*h^(p+1-deriv)/factorial(p+1))
-    V_T_r_rb = V_T_r_cl + factorial(p+1)^2*V_T_rq[p+2,p+2]*(BiasConst_rp[deriv+1]*h^(p+1-deriv)/factorial(p+1))^2 - 2*factorial(deriv)*factorial(p+1)*Cov_T_r[deriv+1,p+2]*(BiasConst_rp[deriv+1]*h^(p+1-deriv)/factorial(p+1))
-    V_T_rb = V_T_l_rb + V_T_r_rb
-    
-    tau_T = c(tau_T_rp[deriv+1,1] - tau_T_lp[deriv+1,1], tau_T_rp[deriv+1,1] - tau_T_lp[deriv+1,1] - Bias_T_tau,tau_T_rp[deriv+1,1] - tau_T_lp[deriv+1,1] - Bias_T_tau)
-    se_T = c(sqrt(V_T_cl), sqrt(V_T_rb), sqrt(V_T_rb))
-    t_T = tau_T/se_T
-    pv_T = 2*pnorm(-abs(t_T))
-    ci_T=matrix(NA,nrow=3,ncol=2)
-    ci_T[1,] = c(tau_T[1] - quant*se_T[1], tau_T[1] + quant*se_T[1])
-    ci_T[2,] = c(tau_T[2] - quant*se_T[2], tau_T[2] + quant*se_T[2])
-    ci_T[3,] = c(tau_T[3] - quant*se_T[3], tau_T[3] + quant*se_T[3])
-        
-    ############  Second Stage
-    Bias_F_tau = (1/tau_T[1])*Bias_tau - (tau_Y[1]/tau_T[1]^2)*Bias_T_tau 
-    tau_F = c(tau_Y[1]/tau_T[1], tau_Y[1]/tau_T[1] - Bias_F_tau, tau_Y[1]/tau_T[1] - Bias_F_tau)
-    sigmah_TY_l = c(rdvce(X=Xh_l, y=Yh_l, frd=Th_l, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    sigmah_TY_r = c(rdvce(X=Xh_r, y=Yh_r, frd=Th_r, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    sigmab_TY_l = c(rdvce(X=Xb_l, y=Yb_l, frd=Tb_l, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    sigmab_TY_r = c(rdvce(X=Xb_r, y=Yb_r, frd=Tb_r, p=p, h=h, matches=matches, vce=vce, kernel=kernel))
-    out.lp = qrreg(Xh_lp, Th_l, whh_l, sigmah_TY_l); out.rp = qrreg(Xh_rp, Th_r, whh_r, sigmah_TY_r)
-    out.lq = qrreg(Xb_lq, Tb_l, wbb_l, sigmab_TY_l); out.rq = qrreg(Xb_rq, Tb_r, wbb_r, sigmab_TY_r)
-    V_TY_lp   = out.lp$Sigma.hat; V_TY_rp   = out.rp$Sigma.hat
-    V_TY_lq   = out.lq$Sigma.hat; V_TY_rq   = out.rq$Sigma.hat
-    invGamma_TY_lp = out.lp$X.M.X_inv; invGamma_TY_rp = out.rp$X.M.X_inv
-    invGamma_TY_lq = out.lq$X.M.X_inv; invGamma_TY_rq = out.rq$X.M.X_inv
-    
-    if (b>=h){
-      Psi_TY_lpq = t(Xb_lp*c(whb_l*sigmab_TY_l*wbb_l))%*%Xb_lq
-      Psi_TY_rpq = t(Xb_rp*c(whb_r*sigmab_TY_r*wbb_r))%*%Xb_rq
-    }
-    else {
-      Psi_TY_lpq = t(Xh_lp*c(whh_l*sigmah_TY_l*wbh_l))%*%Xh_lq
-      Psi_TY_rpq = t(Xh_rp*c(whh_r*sigmah_TY_r*wbh_r))%*%Xh_rq
-    } 
-    
-    Cov_TY_l = invGamma_TY_lp%*%Psi_TY_lpq%*%invGamma_TY_lq
-    Cov_TY_r = invGamma_TY_rp%*%Psi_TY_rpq%*%invGamma_TY_rq
-    V_TY_cl   = factorial(deriv)^2*(V_TY_lp[deriv+1,deriv+1] + V_TY_rp[deriv+1,deriv+1])
-    V_F_cl = (1/tau_T[1]^2)*V_cl + (tau_Y[1]^2/tau_T[1]^4)*V_T_cl -(2*tau_Y[1]/tau_T[1]^3)*V_TY_cl
-    C_F_l_pq = factorial(deriv)*factorial(p+1)*((1/tau_T[1]^2)*Cov_l - (2*tau_Y[1]/tau_T[1]^3)*Cov_TY_l + (tau_Y[1]^2/tau_T[1]^4)*Cov_T_l)
-    C_F_r_pq = factorial(deriv)*factorial(p+1)*((1/tau_T[1]^2)*Cov_r - (2*tau_Y[1]/tau_T[1]^3)*Cov_TY_r + (tau_Y[1]^2/tau_T[1]^4)*Cov_T_r)
-    V_F_rb_t2 = -2*(C_F_l_pq[deriv+1,p+2]*BiasConst_lp[deriv+1] + C_F_r_pq[deriv+1,p+2]*BiasConst_rp[deriv+1])*h^(p+1-deriv)/factorial(p+1)
-    C_YY_lq = factorial(p+1)^2*V_lq[p+2,p+2]
-    C_YY_rq = factorial(p+1)^2*V_rq[p+2,p+2]
-    C_TT_lq = factorial(p+1)^2*V_T_lq[p+2,p+2]
-    C_TT_rq = factorial(p+1)^2*V_T_rq[p+2,p+2]
-    C_TY_lq = factorial(p+1)^2*V_TY_lq[p+2,p+2]
-    C_TY_rq = factorial(p+1)^2*V_TY_rq[p+2,p+2]
-    V_F_cl_lq = (1/tau_T[1]^2)*C_YY_lq + (tau_Y[1]^2/tau_T[1]^4)*C_TT_lq -(2*tau_Y[1]/tau_T[1]^3)*C_TY_lq
-    V_F_cl_rq = (1/tau_T[1]^2)*C_YY_rq + (tau_Y[1]^2/tau_T[1]^4)*C_TT_rq -(2*tau_Y[1]/tau_T[1]^3)*C_TY_rq
-    V_F_rb_t3 = (V_F_cl_lq*BiasConst_lp[deriv+1]^2 + V_F_cl_rq*BiasConst_rp[deriv+1]^2)*(h^(p+1-deriv)/factorial(p+1))^2
-    V_F_rb = V_F_cl + V_F_rb_t2 + V_F_rb_t3
 
-    se_F = c(sqrt(V_F_cl),sqrt(V_F_cl), sqrt(V_F_rb))
-    t_F =  tau_F/se_F
-    pv_F = 2*pnorm(-abs(t_F))
-    ci_F=matrix(NA,nrow=3,ncol=2)
-    ci_F[1,] = c(tau_F[1] - quant*se_F[1], tau_F[1] + quant*se_F[1])
-    ci_F[2,] = c(tau_F[2] - quant*se_F[2], tau_F[2] + quant*se_F[2])
-    ci_F[3,] = c(tau_F[3] - quant*se_F[3], tau_F[3] + quant*se_F[3])
+  w_h_l = rdrobust_kweight(X_l,c,h_l,kernel);	w_h_r = rdrobust_kweight(X_r,c,h_r,kernel)
+  w_b_l = rdrobust_kweight(X_l,c,b_l,kernel);	w_b_r = rdrobust_kweight(X_r,c,b_r,kernel)
+  ind_h_l = w_h_l> 0;		ind_h_r = w_h_r> 0
+  ind_b_l = w_b_l> 0;		ind_b_r = w_b_r> 0
+  N_h_l = sum(ind_h_l);  N_b_l = sum(ind_b_l)
+  N_h_r = sum(ind_h_r);	N_b_r = sum(ind_b_r)
+  
+  #if (N_h_l<5 | N_h_r<5 | N_b_l<5 | N_b_r<5){
+  #  stop("Not enough observations to perform calculations")
+  #  exit(1)
+  #}
+  
+  ind_l = ind_b_l; ind_r = ind_b_r
+  if (h_l>b_l) ind_l = ind_h_l   
+  if (h_r>b_r) ind_r = ind_h_r   
+  
+  eN_l = sum(ind_l); eN_r = sum(ind_r)
+  eY_l  = Y_l[ind_l,,drop=FALSE];	eY_r  = Y_r[ind_r,,drop=FALSE]
+  eX_l  = X_l[ind_l,,drop=FALSE];	eX_r  = X_r[ind_r,,drop=FALSE]
+  W_h_l = w_h_l[ind_l];	W_h_r = w_h_r[ind_r]
+  W_b_l = w_b_l[ind_l];	W_b_r = w_b_r[ind_r]
+  
+
+  edups_l = edups_r = edupsid_l= edupsid_r = 0	
+  if (vce=="nn") {
+    for (i in 1:eN_l) {
+      edups_l[i]=sum(eX_l==eX_l[i])
+    }
+    for (i in 1:eN_r) {
+      edups_r[i]=sum(eX_r==eX_r[i])
+    }
+    for (i in 1:eN_l) {
+      edupsid_l[i:(i+edups_l[i]-1)]=1:edups_l[i]
+      i=i+edups_l[i]-1
+    }
+    for (i in 1:eN_r) {
+      edupsid_r[i:(i+edups_r[i]-1)]=1:edups_r[i]
+      i=i+edups_r[i]-1
+    }
+  }          
+          
+  u_l = (eX_l-c)/h_l;	u_r = (eX_r-c)/h_r
+  R_q_l = matrix(NA,eN_l,(q+1)); R_q_r = matrix(NA,eN_r,(q+1))
+  for (j in 1:(q+1))  {
+    R_q_l[,j] = (eX_l-c)^(j-1);  R_q_r[,j] = (eX_r-c)^(j-1)
+  }
+  R_p_l = R_q_l[,1:(p+1)]; R_p_r = R_q_r[,1:(p+1)]
+
+  #display("Computing RD estimates.")
+  L_l = crossprod(R_p_l*W_h_l,u_l^(p+1)); L_r = crossprod(R_p_r*W_h_r,u_r^(p+1)) 
+  invG_q_l  = qrXXinv((sqrt(W_b_l)*R_q_l));	invG_q_r  = qrXXinv((sqrt(W_b_r)*R_q_r))
+  invG_p_l  = qrXXinv((sqrt(W_h_l)*R_p_l));	invG_p_r  = qrXXinv((sqrt(W_h_r)*R_p_r))
+  e_p1 = matrix(0,(q+1),1); e_p1[p+2]=1
+  e_v  = matrix(0,(p+1),1); e_v[deriv+1]=1
+  Q_q_l = t(t(R_p_l*W_h_l) - h_l^(p+1)*(L_l%*%t(e_p1))%*%t(t(invG_q_l%*%t(R_q_l))*W_b_l))
+  Q_q_r = t(t(R_p_r*W_h_r) - h_r^(p+1)*(L_r%*%t(e_p1))%*%t(t(invG_q_r%*%t(R_q_r))*W_b_r))
+  D_l = eY_l; D_r = eY_r
+  eC_l=eC_r=eT_l=eT_r=eZ_l=eZ_r=NULL
+  dZ = dT =g_l=g_r= 0
+  
+  if (!is.null(fuzzy)) {
+    dT=1
+    T_l  = fuzzy[x<c,,drop=FALSE];  eT_l  = T_l[ind_l,,drop=FALSE]
+    T_r  = fuzzy[x>=c,,drop=FALSE]; eT_r  = T_r[ind_r,,drop=FALSE]
+    D_l  = cbind(D_l,eT_l); D_r = cbind(D_r,eT_r)
+  }
+  
+  if (!is.null(covs)) {
+    dZ = ncol(covs)
+    Z_l  = covs[x<c,,drop=FALSE];	  eZ_l = Z_l[ind_l,,drop=FALSE]
+    Z_r  = covs[x>=c,,drop=FALSE];	eZ_r = Z_r[ind_r,,drop=FALSE]
+    D_l  = cbind(D_l,eZ_l); D_r = cbind(D_r,eZ_r)
+    U_p_l = crossprod(R_p_l*W_h_l,D_l); U_p_r = crossprod(R_p_r*W_h_r,D_r)
+  }
+              
+  if (!is.null(cluster)) {
+    C_l  = cluster[x<c,,drop=FALSE]; C_r= cluster[x>=c,,drop=FALSE]
+    eC_l  = C_l[ind_l];	     eC_r  = C_r[ind_r]
+    g_l = length(unique(eC_l));	g_r = length(unique(eC_r))
+  }
+                                                     
+  beta_p_l = invG_p_l%*%crossprod(R_p_l*W_h_l,D_l); beta_q_l = invG_q_l%*%crossprod(R_q_l*W_b_l,D_l); beta_bc_l = invG_p_l%*%crossprod(Q_q_l,D_l) 
+  beta_p_r = invG_p_r%*%crossprod(R_p_r*W_h_r,D_r); beta_q_r = invG_q_r%*%crossprod(R_q_r*W_b_r,D_r); beta_bc_r = invG_p_r%*%crossprod(Q_q_r,D_r)
+  beta_p  = beta_p_r  - beta_p_l
+  beta_q  = beta_q_r  - beta_q_l
+  beta_bc = beta_bc_r - beta_bc_l
+
+  if (is.null(covs)) {	
+  tau_cl = tau_Y_cl = scalepar*factorial(deriv)*beta_p[(deriv+1),1]
+  tau_bc = tau_Y_bc = scalepar*factorial(deriv)*beta_bc[(deriv+1),1]
+  s_Y = 1
+  if (!is.null(fuzzy)) {
+     tau_T_cl =  factorial(deriv)*beta_p[(deriv+1),2]
+     tau_T_bc = 	factorial(deriv)*beta_bc[(deriv+1),2]
+     tau_cl = tau_Y_cl/tau_T_cl
+     s_Y = c(1/tau_T_cl , -(tau_Y_cl/tau_T_cl^2))
+     B_F = c(tau_Y_cl-tau_Y_bc , tau_T_cl-tau_T_bc)
+     tau_bc = tau_cl - t(s_Y)%*%B_F
+     sV_T = c(0 , 1)
+  }	
+  } else {	
+    ZWD_p_l  = crossprod(eZ_l*W_h_l,D_l)
+    ZWD_p_r  = crossprod(eZ_r*W_h_r,D_r)
+    colsZ = (2+dT):max(c(2+dT+dZ-1,(2+dT)))
+    UiGU_p_l =  crossprod(U_p_l[,colsZ],invG_p_l%*%U_p_l) 
+    UiGU_p_r =  crossprod(U_p_r[,colsZ],invG_p_r%*%U_p_r) 
+    ZWZ_p_l = ZWD_p_l[,colsZ] - UiGU_p_l[,colsZ] 
+    ZWZ_p_r = ZWD_p_r[,colsZ] - UiGU_p_r[,colsZ]     
+    ZWY_p_l = ZWD_p_l[,1:(1+dT)] - UiGU_p_l[,1:(1+dT)] 
+    ZWY_p_r = ZWD_p_r[,1:(1+dT)] - UiGU_p_r[,1:(1+dT)]     
+    ZWZ_p = ZWZ_p_r + ZWZ_p_l
+    ZWY_p = ZWY_p_r + ZWY_p_l
+    gamma_p = chol2inv(chol(ZWZ_p))%*%ZWY_p
+    s_Y = c(1 ,  -gamma_p[,1])
+    if (is.null(fuzzy)) {
+        tau_cl = t(s_Y)%*%beta_p[(deriv+1),]
+        tau_bc = t(s_Y)%*%beta_bc[(deriv+1),]
+    } else {
+      s_T  = c(1,    -gamma_p[,2])
+      sV_T = c(0, 1, -gamma_p[,2])
+      tau_Y_cl = factorial(deriv)*t(s_Y)%*%c(beta_p[(deriv+1),1], beta_p[(deriv+1),colsZ])
+      tau_T_cl = factorial(deriv)*t(s_T)%*%c(beta_p[(deriv+1),2], beta_p[(deriv+1),colsZ])
+      tau_Y_bc = factorial(deriv)*t(s_Y)%*%c(beta_bc[(deriv+1),1],beta_bc[(deriv+1),colsZ])
+      tau_T_bc = factorial(deriv)*t(s_T)%*%c(beta_bc[(deriv+1),2],beta_bc[(deriv+1),colsZ])
+      tau_cl = tau_Y_cl/tau_T_cl
+      B_F = c(tau_Y_cl-tau_Y_bc , tau_T_cl-tau_T_bc)
+      s_Y = c(1/tau_T_cl , -(tau_Y_cl/tau_T_cl^2))
+      tau_bc = tau_cl - t(s_Y)%*%B_F
+      s_Y = c(1/tau_T_cl , -(tau_Y_cl/tau_T_cl^2) , -(1/tau_T_cl)*gamma_p[,1] + (tau_Y_cl/tau_T_cl^2)*gamma_p[,2])
+    }
+  }
+
+#*display("Computing variance-covariance matrix.")
+  
+  hii_l=hii_r=predicts_p_l=predicts_p_r=predicts_q_l=predicts_q_r=0
+  if (vce=="hc0" | vce=="hc1" | vce=="hc2" | vce=="hc3") {
+    predicts_p_l=R_p_l%*%beta_p_l
+    predicts_p_r=R_p_r%*%beta_p_r
+    predicts_q_l=R_q_l%*%beta_q_l
+    predicts_q_r=R_q_r%*%beta_q_r
+    if (vce=="hc2" | vce=="hc3") {
+      hii_l=matrix(NA,eN_l,1)	
+      for (i in 1:eN_l) {
+        hii_l[i] = R_p_l[i,]%*%invG_p_l%*%(R_p_l*W_h_l)[i,]
+      }
+      hii_r=matrix(NA,eN_r,1)	
+      for (i in 1:eN_r) {  
+        hii_r[i] = R_p_r[i,]%*%invG_p_r%*%(R_p_r*W_h_r)[i,]
+      }
+    }
+  }
+  						
+	res_h_l = rdrobust_res(eX_l, eY_l, eT_l, eZ_l, predicts_p_l, hii_l, vce, nnmatch, edups_l, edupsid_l, p+1)
+	res_h_r = rdrobust_res(eX_r, eY_r, eT_r, eZ_r, predicts_p_r, hii_r, vce, nnmatch, edups_r, edupsid_r, p+1)
+	if (vce=="nn") {
+			res_b_l = res_h_l;	res_b_r = res_h_r
+	} 	else {
+			res_b_l = rdrobust_res(eX_l, eY_l, eT_l, eZ_l, predicts_q_l, hii_l, vce, nnmatch, edups_l, edupsid_l, q+1)
+			res_b_r = rdrobust_res(eX_r, eY_r, eT_r, eZ_r, predicts_q_r, hii_r, vce, nnmatch, edups_r, edupsid_r, q+1)
+  }
+			                       
+	V_Y_cl_l = invG_p_l%*%rdrobust_vce(dT+dZ, s_Y, R_p_l*W_h_l, res_h_l, eC_l)%*%invG_p_l
+	V_Y_cl_r = invG_p_r%*%rdrobust_vce(dT+dZ, s_Y, R_p_r*W_h_r, res_h_r, eC_r)%*%invG_p_r
+	V_Y_bc_l = invG_p_l%*%rdrobust_vce(dT+dZ, s_Y, Q_q_l,       res_b_l, eC_l)%*%invG_p_l
+	V_Y_bc_r = invG_p_r%*%rdrobust_vce(dT+dZ, s_Y, Q_q_r,       res_b_r, eC_r)%*%invG_p_r
+	V_tau_cl = factorial(deriv)^2*(V_Y_cl_l+V_Y_cl_r)[deriv+1,deriv+1]
+	V_tau_rb = factorial(deriv)^2*(V_Y_bc_l+V_Y_bc_r)[deriv+1,deriv+1]
+	se_tau_cl = scalepar*sqrt(V_tau_cl);	se_tau_rb = scalepar*sqrt(V_tau_rb)
+
+	if (!is.null(fuzzy)) {
+		V_T_cl_l = invG_p_l%*%rdrobust_vce(dT+dZ, sV_T, R_p_l*W_h_l, res_h_l, eC_l)%*%invG_p_l
+		V_T_cl_r = invG_p_r%*%rdrobust_vce(dT+dZ, sV_T, R_p_r*W_h_r, res_h_r, eC_r)%*%invG_p_r
+		V_T_bc_l = invG_p_l%*%rdrobust_vce(dT+dZ, sV_T, Q_q_l, res_b_l, eC_l)%*%invG_p_l
+		V_T_bc_r = invG_p_r%*%rdrobust_vce(dT+dZ, sV_T, Q_q_r, res_b_r, eC_r)%*%invG_p_r
+		V_T_cl = factorial(deriv)^2*(V_T_cl_l+V_T_cl_r)[deriv+1,deriv+1]
+		V_T_rb = factorial(deriv)^2*(V_T_bc_l+V_T_bc_r)[deriv+1,deriv+1]
+		se_tau_T_cl = sqrt(V_T_cl);	se_tau_T_rb = sqrt(V_T_rb)
+	}
+  
+  tau = c(tau_cl, tau_bc, tau_bc)
+  se  = c(se_tau_cl,se_tau_cl,se_tau_rb)
+  t  =  tau/se
+  pv = 2*pnorm(-abs(t))
+  ci = matrix(NA,nrow=3,ncol=2)
+  rownames(ci)=c("Conventional","Bias-Corrected","Robust")
+  colnames(ci)=c("Lower","Upper")
+  ci[1,] = c(tau[1] - quant*se[1], tau[1] + quant*se[1])
+  ci[2,] = c(tau[2] - quant*se[2], tau[2] + quant*se[2])
+  ci[3,] = c(tau[3] - quant*se[3], tau[3] + quant*se[3])
+    
+  if (!is.null(fuzzy)) {  
+      tau_T = c(tau_T_cl, tau_T_bc, tau_T_bc)
+      se_T = c(se_tau_T_cl, se_tau_T_cl, se_tau_T_rb)
+      t_T = tau_T/se_T
+      pv_T = 2*pnorm(-abs(t_T))
+      ci_T=matrix(NA,nrow=3,ncol=2)
+      ci_T[1,] = c(tau_T[1] - quant*se_T[1], tau_T[1] + quant*se_T[1])
+      ci_T[2,] = c(tau_T[2] - quant*se_T[2], tau_T[2] + quant*se_T[2])
+      ci_T[3,] = c(tau_T[3] - quant*se_T[3], tau_T[3] + quant*se_T[3])
   }
 
   #print("Estimation Completed.") 
 
-  if (type == "sharp") {  
-    coef=matrix(tau_Y,3,1)
-    se  =matrix(se_Y,3,1)
-    z   =matrix(t_Y,3,1)
-    pv  =matrix(pv_Y,3,1)
-    ci=ci_Y
-  }
-  else if (type == "fuzzy") {
-    coef=matrix(tau_F,3,1)
-    se  =matrix(se_F,3,1)
-    z   =matrix(t_F,3,1)
-    pv  =matrix(pv_F,3,1)
-    ci=ci_F
-  }
+    coef=matrix(tau,3,1)
+    se  =matrix(se,3,1)
+    z   =matrix(t,3,1)
+    pv  =matrix(pv,3,1)
+    ci=ci
+  
 
-  bws=matrix(c(h,b),1,2)
+
+  bws=matrix(c(h_l,b_l,h_r,b_r),2,2)
   rownames(coef)=rownames(se)=rownames(se)=rownames(z)=rownames(pv)=c("Conventional","Bias-Corrected","Robust")
   colnames(coef)="Coeff"
   colnames(se)="Std. Err."
   colnames(z)="z"
   colnames(pv)="P>|z|"
-  colnames(bws)=c("h","b")
+  colnames(bws)=c("left","right")
   rownames(ci)=c("Conventional","Bias-Corrected","Robust")
   colnames(ci)=c("CI Lower","CI Upper")
     
@@ -419,19 +403,19 @@ rdrobust = function(y, x,  subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NULL, h=
   rownames(tabl1.str)=c("Number of Obs", "NN Matches", "BW Type", "Kernel Type")
   dimnames(tabl1.str) <-list(c("Number of Obs", "NN Matches", "BW Type", "Kernel Type"), rep("", dim(tabl1.str)[2]))
   tabl1.str[1,1]=N
-  tabl1.str[2,1]=matches
+  tabl1.str[2,1]=nnmatch
   tabl1.str[3,1]=bwselect
   tabl1.str[4,1]=kernel_type
   
   tabl2.str=matrix(NA,6,2)
   colnames(tabl2.str)=c("Left","Right")
   rownames(tabl2.str)=c("Number of Obs","Order Loc Poly (p)","Order Bias (q)","BW Loc Poly (h)","BW Bias (b)","rho (h/b)")
-  tabl2.str[1,]=formatC(c(Nh_l,Nh_r),digits=0, format="f")
+  tabl2.str[1,]=formatC(c(N_l,N_r),digits=0, format="f")
   tabl2.str[2,]=formatC(c(p,p),digits=0, format="f")
   tabl2.str[3,]=formatC(c(q,q),digits=0, format="f")
-  tabl2.str[4,]=formatC(c(h,h),digits=4, format="f")
-  tabl2.str[5,]=formatC(c(b,b),digits=4, format="f")
-  tabl2.str[6,]=formatC(c(h/b,h/b),digits=4, format="f")
+  tabl2.str[4,]=formatC(c(h_l,h_r),digits=4, format="f")
+  tabl2.str[5,]=formatC(c(b_l,b_r),digits=4, format="f")
+  tabl2.str[6,]=formatC(c(h_l/b_l,h_r/b_r),digits=4, format="f")
   
   tabl3.str=matrix("",2,6)
   colnames(tabl3.str)=c("Coef","Std. Err.","z","P>|z|","CI Lower","CI Upper")
@@ -449,7 +433,7 @@ rdrobust = function(y, x,  subset = NULL, c=0, p=1, q=2, deriv=0, fuzzy=NULL, h=
     colnames(tabl3.str)=c("Coef","Std. Err.","z","P>|z|","CI Lower","CI Upper")
   }
 
-  out=list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,tabl3.str=tabl3.str,coef=coef,bws=bws,se=se,z=z,pv=pv,ci=ci,p=p,q=q,h=h,b=b,rho=rho,N=N,N_l=Nh_l,N_r=Nh_r)
+  out=list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,tabl3.str=tabl3.str,coef=coef,bws=bws,se=se,z=z,pv=pv,ci=ci,p=p,q=q,h=h,b=b,rho=rho,N=N,N_l=eN_l,N_r=eN_r)
   out$call <- match.call()
   class(out) <- "rdrobust"
   return(out)
