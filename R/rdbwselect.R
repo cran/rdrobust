@@ -33,17 +33,17 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
     na.ok <- na.ok & complete.cases(fuzzy)
   } 
   
-  x = matrix(x[na.ok])
-  y = matrix(y[na.ok])
-  if (!is.null(covs))    covs    = matrix(covs)[na.ok, , drop = FALSE]
-  if (!is.null(fuzzy))   fuzzy   = matrix(fuzzy[na.ok])
-  if (!is.null(cluster)) cluster = matrix(cluster[na.ok])
+  x = as.matrix(x[na.ok])
+  y = as.matrix(y[na.ok])
+  if (!is.null(covs))    covs    = as.matrix(covs)[na.ok, , drop = FALSE]
+  if (!is.null(fuzzy))   fuzzy   = as.matrix(fuzzy[na.ok])
+  if (!is.null(cluster)) cluster = as.matrix(cluster[na.ok])
   
   if (vce=="nn") {
     order_x = order(x)
     x = x[order_x,,drop=FALSE]
     y = y[order_x,,drop=FALSE]
-    if (!is.null(covs))    covs    =  matrix(covs)[order_x,,drop=FALSE]
+    if (!is.null(covs))    covs    =  as.matrix(covs)[order_x,,drop=FALSE]
     if (!is.null(fuzzy))   fuzzy   =   fuzzy[order_x,,drop=FALSE]
     if (!is.null(cluster)) cluster = cluster[order_x,,drop=FALSE]
   }

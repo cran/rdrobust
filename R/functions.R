@@ -64,7 +64,7 @@ rdrobust_res = function(X, y, T, Z, m, hii, vce, matches, dups, dupsid, d) {
           lpos = lpos + dups[pos-lpos-1]
         }
       }
-      ind_J = (pos-lpos):min(c(n,(pos+rpos)))
+      ind_J = max(c(0,(pos-lpos))):min(c(n,(pos+rpos)))
       y_J   = sum(y[ind_J])-y[pos]
       Ji = length(ind_J)-1
       res[pos,1] = sqrt(Ji/(Ji+1))*(y[pos] - y_J/Ji)

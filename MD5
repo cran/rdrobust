@@ -1,10 +1,10 @@
-717caa225a26d6654d784fbab65c36d0 *DESCRIPTION
+eade786c614beb4fdea4170f7bf06641 *DESCRIPTION
 00dccaf46ba2444fe03c880ad18d8c69 *NAMESPACE
-95b01f7cff1dcd7bf970e20e63cf5cd8 *R/functions.R
-1d650919eef49fa3bf5f4bfaff9aeb4c *R/rdbwselect.R
+1f7beb71bc89190206ff8140c650d8ba *R/functions.R
+b8101bbe10a554fe51279081f2a564fd *R/rdbwselect.R
 54b8fd1e47dbd7d5a47605cd9153b13b *R/rdbwselect_2014.R
 f603674b70d0cc1f0bf1078317d7b5ef *R/rdplot.R
-e7caaef31a265027afc343f37a14d7da *R/rdrobust.R
+d572537567a07a0c8eb79bf3be9f162a *R/rdrobust.R
 80860397cd21fb1497c6106961b33bce *data/rdrobust_RDsenate.rda
 05cc06c1e64987f53e736757096dd7e2 *man/rdbwselect.Rd
 9fbc72f85083278b29a9b705f8d18af9 *man/rdbwselect_2014.Rd
