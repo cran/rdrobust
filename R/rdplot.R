@@ -6,6 +6,8 @@
 ### version 0.61 03Sep2014
 ### version 0.7  14Oct2014
 ### version 0.8  04Feb2015
+### version 0.9  28Mar2016
+### version 0.92 08Aug2016
 
 rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kernel = "uni", h=NULL, 
                           hide=FALSE, ci=NULL, shade=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
@@ -285,6 +287,16 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
     J_star_r = nbins_r
     binselect_type="manually evenly spaced"
   }
+  
+  if (var_y_l==0) {
+    J_star_l = J_star_l_orig = 1
+    print("Warning: not enough variability in the outcome variable below the threshold")
+  }
+
+	if (var_y_r==0) {
+	  J_star_r = J_star_r_orig = 1
+	  print("Warning: not enough variability in the outcome variable above the threshold")
+	}
   
   scale_l = J_star_l / J_IMSE[1]
   scale_r = J_star_r / J_IMSE[2]

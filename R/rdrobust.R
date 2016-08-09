@@ -7,6 +7,7 @@
 ### version 0.7  14Oct2014
 ### version 0.8  04Feb2015
 ### version 0.9  28Mar2016
+### version 0.92 08Aug2016
 
 rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, deriv=0, h=NULL, b=NULL, rho=NULL, 
                     scalepar=1, kernel="tri", bwselect="mserd", scaleregul=1, sharpbw=FALSE, vce="nn",  nnmatch=3, level=95, all=FALSE, subset = NULL) {
@@ -24,7 +25,7 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
   } 
   
   if (!is.null(covs)){
-    if (!is.null(subset))  covs <- covs[subset]
+    if (!is.null(subset))  covs <- subset(covs,subset)
     na.ok <- na.ok & complete.cases(covs)
   } 
   
@@ -201,7 +202,9 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
   W_b_l = w_b_l[ind_l];	W_b_r = w_b_r[ind_r]
   
 
-  edups_l = edups_r = edupsid_l= edupsid_r = 0	
+  edups_l = edupsid_l = matrix(0,eN_l,1)
+  edups_r = edupsid_r = matrix(0,eN_r,1)
+ 
   if (vce=="nn") {
     for (i in 1:eN_l) {
       edups_l[i]=sum(eX_l==eX_l[i])
@@ -209,13 +212,15 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
     for (i in 1:eN_r) {
       edups_r[i]=sum(eX_r==eX_r[i])
     }
-    for (i in 1:eN_l) {
-      edupsid_l[i:(i+edups_l[i]-1)]=1:edups_l[i]
-      i=i+edups_l[i]-1
+    i=1
+    while (i<=eN_l) {
+      edupsid_l[i:(i+edups_l[i]-1)] = 1:edups_l[i]
+      i = i+edups_l[i]
     }
-    for (i in 1:eN_r) {
+    i=1
+    while (i<=eN_r) {
       edupsid_r[i:(i+edups_r[i]-1)]=1:edups_r[i]
-      i=i+edups_r[i]-1
+      i=i+edups_r[i]
     }
   }          
           
@@ -269,6 +274,14 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
   tau_cl = tau_Y_cl = scalepar*factorial(deriv)*beta_p[(deriv+1),1]
   tau_bc = tau_Y_bc = scalepar*factorial(deriv)*beta_bc[(deriv+1),1]
   s_Y = 1
+  
+  tau_Y_cl_l = scalepar*factorial(deriv)*beta_p_l[(deriv+1),1]
+  tau_Y_cl_r = scalepar*factorial(deriv)*beta_p_r[(deriv+1),1]
+  tau_Y_bc_l = scalepar*factorial(deriv)*beta_bc_l[(deriv+1),1]
+  tau_Y_bc_r = scalepar*factorial(deriv)*beta_bc_r[(deriv+1),1]
+  bias_l = tau_Y_cl_l-tau_Y_bc_l
+  bias_r = tau_Y_cl_r-tau_Y_bc_r 
+  
   if (!is.null(fuzzy)) {
      tau_T_cl =  factorial(deriv)*beta_p[(deriv+1),2]
      tau_T_bc = 	factorial(deriv)*beta_bc[(deriv+1),2]
@@ -277,6 +290,16 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
      B_F = c(tau_Y_cl-tau_Y_bc , tau_T_cl-tau_T_bc)
      tau_bc = tau_cl - t(s_Y)%*%B_F
      sV_T = c(0 , 1)
+     
+     tau_T_cl_l = factorial(deriv)*beta_p_l[(deriv+1),2]
+     tau_T_cl_r = factorial(deriv)*beta_p_l[(deriv+1),2]
+     tau_T_bc_l = factorial(deriv)*beta_bc_l[(deriv+1),2]
+     tau_T_bc_r = factorial(deriv)*beta_bc_r[(deriv+1),2]
+     B_F_l = c(tau_Y_cl_l-tau_Y_bc_l, tau_T_cl_l-tau_T_bc_l)
+     B_F_r = c(tau_Y_cl_r-tau_Y_bc_r, tau_T_cl_r-tau_T_bc_r)
+     bias_l = t(s_Y)%*%B_F_l
+		 bias_r = t(s_Y)%*%B_F_r
+     
   }	
   } else {	
     ZWD_p_l  = crossprod(eZ_l*W_h_l,D_l)
@@ -295,6 +318,13 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
     if (is.null(fuzzy)) {
         tau_cl = t(s_Y)%*%beta_p[(deriv+1),]
         tau_bc = t(s_Y)%*%beta_bc[(deriv+1),]
+        
+        tau_cl_l = t(s_Y)%*%beta_p_l[(deriv+1),]
+        tau_cl_r = t(s_Y)%*%beta_p_r[(deriv+1),]
+        tau_bc_l = t(s_Y)%*%beta_bc_l[(deriv+1),]
+        tau_bc_r = t(s_Y)%*%beta_bc_r[(deriv+1),]
+        bias_l = tau_cl_l-tau_bc_l
+        bias_r = tau_cl_r-tau_bc_r 
     } else {
       s_T  = c(1,    -gamma_p[,2])
       sV_T = c(0, 1, -gamma_p[,2])
@@ -306,6 +336,24 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
       B_F = c(tau_Y_cl-tau_Y_bc , tau_T_cl-tau_T_bc)
       s_Y = c(1/tau_T_cl , -(tau_Y_cl/tau_T_cl^2))
       tau_bc = tau_cl - t(s_Y)%*%B_F
+  
+
+      tau_Y_cl_l = factorial(deriv)*t(s_Y)%*%c(beta_p_l[(deriv+1),1], beta_p_l[(deriv+1),colsZ])
+      tau_Y_cl_r = factorial(deriv)*t(s_Y)%*%c(beta_p_r[(deriv+1),2], beta_p_r[(deriv+1),colsZ])
+      tau_Y_bc_l = factorial(deriv)*t(s_Y)%*%c(beta_bc_l[(deriv+1),1],beta_bc_l[(deriv+1),colsZ])
+      tau_Y_bc_r = factorial(deriv)*t(s_Y)%*%c(beta_bc_r[(deriv+1),2],beta_bc_r[(deriv+1),colsZ])
+
+      tau_T_cl_l = factorial(deriv)*t(s_T)%*%c(beta_p_l[(deriv+1),1], beta_p_l[(deriv+1),colsZ])
+      tau_T_cl_r = factorial(deriv)*t(s_T)%*%c(beta_p_r[(deriv+1),2], beta_p_r[(deriv+1),colsZ])
+      tau_t_bc_l = factorial(deriv)*t(s_T)%*%c(beta_bc_l[(deriv+1),1],beta_bc_l[(deriv+1),colsZ])
+      tau_T_bc_r = factorial(deriv)*t(s_T)%*%c(beta_bc_r[(deriv+1),2],beta_bc_r[(deriv+1),colsZ])
+
+      B_F_l = c(tau_Y_cl_l-tau_Y_bc_l, tau_T_cl_l-tau_T_bc_l)
+      B_F_r = c(tau_Y_cl_r-tau_Y_bc_r, tau_T_cl_r-tau_T_bc_r)
+
+      bias_l = t(s_Y)%*%B_F_l
+      bias_r = t(s_Y)%*%B_F_r
+
       s_Y = c(1/tau_T_cl , -(tau_Y_cl/tau_T_cl^2) , -(1/tau_T_cl)*gamma_p[,1] + (tau_Y_cl/tau_T_cl^2)*gamma_p[,2])
     }
   }
@@ -386,8 +434,6 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
     z   =matrix(t,3,1)
     pv  =matrix(pv,3,1)
     ci=ci
-  
-
 
   bws=matrix(c(h_l,b_l,h_r,b_r),2,2)
   rownames(coef)=rownames(se)=rownames(se)=rownames(z)=rownames(pv)=c("Conventional","Bias-Corrected","Robust")
@@ -407,15 +453,16 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
   tabl1.str[3,1]=bwselect
   tabl1.str[4,1]=kernel_type
   
-  tabl2.str=matrix(NA,6,2)
+  tabl2.str=matrix(NA,7,2)
   colnames(tabl2.str)=c("Left","Right")
-  rownames(tabl2.str)=c("Number of Obs","Order Loc Poly (p)","Order Bias (q)","BW Loc Poly (h)","BW Bias (b)","rho (h/b)")
+  rownames(tabl2.str)=c("Number of Obs","Order Loc Poly (p)","Order Bias (q)","BW Loc Poly (h)","BW Bias (b)","rho (h/b)","bias")
   tabl2.str[1,]=formatC(c(N_l,N_r),digits=0, format="f")
   tabl2.str[2,]=formatC(c(p,p),digits=0, format="f")
   tabl2.str[3,]=formatC(c(q,q),digits=0, format="f")
   tabl2.str[4,]=formatC(c(h_l,h_r),digits=4, format="f")
   tabl2.str[5,]=formatC(c(b_l,b_r),digits=4, format="f")
   tabl2.str[6,]=formatC(c(h_l/b_l,h_r/b_r),digits=4, format="f")
+  tabl2.str[7,]=formatC(c(bias_l,bias_r),  digits=4, format="f")
   
   tabl3.str=matrix("",2,6)
   colnames(tabl3.str)=c("Coef","Std. Err.","z","P>|z|","CI Lower","CI Upper")

@@ -7,6 +7,7 @@
 ### version 0.7  14Oct2014
 ### version 0.8  04Feb2015
 ### version 0.9  28Mar2016
+### version 0.92 08Aug2016
 
 rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1, q=2, deriv=0, 
                       kernel="tri", bwselect="mserd", scaleregul=1, sharpbw=FALSE, vce="nn",  nnmatch=3, all=FALSE, subset = NULL){
@@ -24,7 +25,7 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
   } 
   
   if (!is.null(covs)){
-    if (!is.null(subset))  covs <- covs[subset]
+    if (!is.null(subset))  covs <- subset(covs,subset)
     na.ok <- na.ok & complete.cases(covs)
   } 
   
@@ -146,32 +147,34 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
   
   #***********************************************************************
 
-  dZ=Z_l=Z_r=T_l=T_r=C_l=C_r=Cind_l=Cind_r=g_l=g_r=dups_l=dups_r=dupsid_l=dupsid_r=NULL
-    
-  if (vce=="nn") {
-      for (i in 1:N_l) {
-        dups_l[i]=sum(X_l==X_l[i])
-      }
-      for (i in 1:N_r) {
-        dups_r[i]=sum(X_r==X_r[i])
-      }
-      
-      for (i in 1:N_l) {
-        dupsid_l[i:(i+dups_l[i]-1)]=1:dups_l[i]
-        i=i+dups_l[i]-1
-      }
-      for (i in 1:N_r) {
-        dupsid_r[i:(i+dups_r[i]-1)]=1:dups_r[i]
-        i=i+dups_r[i]-1
-      }
-  }
+  dZ=Z_l=Z_r=T_l=T_r=C_l=C_r=Cind_l=Cind_r=g_l=g_r=NULL
+
+  dups_l = dupsid_l = matrix(0,N_l,1)
+  dups_r = dupsid_r = matrix(0,N_r,1)
   
+  if (vce=="nn") {
+    for (i in 1:N_l) {
+      dups_l[i]=sum(X_l==X_l[i])
+    }
+    for (i in 1:N_r) {
+      dups_r[i]=sum(X_r==X_r[i])
+    }
+    i=1
+    while (i<=N_l) {
+      dupsid_l[i:(i+dups_l[i]-1)] = 1:dups_l[i]
+      i = i+dups_l[i]
+    }
+    i=1
+    while (i<=N_r) {
+      dupsid_r[i:(i+dups_r[i]-1)]=1:dups_r[i]
+      i=i+dups_r[i]
+    }
+  } 
   
   
   if (!is.null(covs)) {
     dZ = ncol(covs)
     Z_l  = covs[x<c,,drop=FALSE];  Z_r  = covs[x>=c,,drop=FALSE]
-
   }
   perf_comp=FALSE
   if (!is.null(fuzzy)) {
@@ -285,7 +288,13 @@ if  (bwselect=="msecomb2" | bwselect=="cercomb2" |  all=="TRUE" ) {
   b_msecomb2_r = median(c(b_mserd,b_msesum,b_msetwo_r))
 }
 cer_h = N^(-(p/((3+p)*(3+2*p))))
-cer_b = N^(-(q/((3+q)*(3+2*q))))
+
+if (!is.null(cluster)) {
+  cer_h = (g_l+g_r)^(-(p/((3+p)*(3+2*p))))
+}
+
+#cer_b = N^(-(q/((3+q)*(3+2*q))))
+cer_b = 1
 	if  (bwselect=="cerrd" | all=="TRUE" ){
 		h_cerrd = h_mserd*cer_h
 		b_cerrd = b_mserd*cer_b
