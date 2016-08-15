@@ -283,8 +283,8 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
   bias_r = tau_Y_cl_r-tau_Y_bc_r 
   
   if (!is.null(fuzzy)) {
-     tau_T_cl =  factorial(deriv)*beta_p[(deriv+1),2]
-     tau_T_bc = 	factorial(deriv)*beta_bc[(deriv+1),2]
+     tau_T_cl = factorial(deriv)*beta_p[(deriv+1),2]
+     tau_T_bc = factorial(deriv)*beta_bc[(deriv+1),2]
      tau_cl = tau_Y_cl/tau_T_cl
      s_Y = c(1/tau_T_cl , -(tau_Y_cl/tau_T_cl^2))
      B_F = c(tau_Y_cl-tau_Y_bc , tau_T_cl-tau_T_bc)
@@ -332,11 +332,6 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
       tau_T_cl = factorial(deriv)*t(s_T)%*%c(beta_p[(deriv+1),2], beta_p[(deriv+1),colsZ])
       tau_Y_bc = factorial(deriv)*t(s_Y)%*%c(beta_bc[(deriv+1),1],beta_bc[(deriv+1),colsZ])
       tau_T_bc = factorial(deriv)*t(s_T)%*%c(beta_bc[(deriv+1),2],beta_bc[(deriv+1),colsZ])
-      tau_cl = tau_Y_cl/tau_T_cl
-      B_F = c(tau_Y_cl-tau_Y_bc , tau_T_cl-tau_T_bc)
-      s_Y = c(1/tau_T_cl , -(tau_Y_cl/tau_T_cl^2))
-      tau_bc = tau_cl - t(s_Y)%*%B_F
-  
 
       tau_Y_cl_l = factorial(deriv)*t(s_Y)%*%c(beta_p_l[(deriv+1),1], beta_p_l[(deriv+1),colsZ])
       tau_Y_cl_r = factorial(deriv)*t(s_Y)%*%c(beta_p_r[(deriv+1),2], beta_p_r[(deriv+1),colsZ])
@@ -348,9 +343,14 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
       tau_t_bc_l = factorial(deriv)*t(s_T)%*%c(beta_bc_l[(deriv+1),1],beta_bc_l[(deriv+1),colsZ])
       tau_T_bc_r = factorial(deriv)*t(s_T)%*%c(beta_bc_r[(deriv+1),2],beta_bc_r[(deriv+1),colsZ])
 
+      tau_cl = tau_Y_cl/tau_T_cl
+      B_F   = c(tau_Y_cl-tau_Y_bc,     tau_T_cl-tau_T_bc)
       B_F_l = c(tau_Y_cl_l-tau_Y_bc_l, tau_T_cl_l-tau_T_bc_l)
       B_F_r = c(tau_Y_cl_r-tau_Y_bc_r, tau_T_cl_r-tau_T_bc_r)
-
+      
+      s_Y = c(1/tau_T_cl , -(tau_Y_cl/tau_T_cl^2))
+      tau_bc = tau_cl - t(s_Y)%*%B_F
+      
       bias_l = t(s_Y)%*%B_F_l
       bias_r = t(s_Y)%*%B_F_r
 
