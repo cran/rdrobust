@@ -67,7 +67,13 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
    q = p+1
   }
 
-
+  vce_type = "NN"
+  if (vce=="hc0")         vce_type = "HC0"
+  if (vce=="hc1")         vce_type = "HC1"
+  if (vce=="hc2")         vce_type = "HC2"
+  if (vce=="hc3")      	  vce_type = "HC3"
+  if (!is.null(cluster))	vce_type = "Cluster"
+  
   #####################################################   CHECK ERRORS
   exit=0
     if (kernel!="uni" & kernel!="uniform" & kernel!="tri" & kernel!="triangular" & kernel!="epa" & kernel!="epanechnikov" & kernel!="" ){
@@ -95,7 +101,7 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
       exit = 1
     }
     
-    if (p<=0 | q<=0 | deriv<0 | nnmatch<=0 ){
+    if (p<0 | q<0 | deriv<0 | nnmatch<=0 ){
       print("p,q,deriv and matches should be positive integers")
       exit = 1
     }
@@ -106,13 +112,13 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
     }
     
     if (deriv>p & deriv>0 ){
-      print("deriv should be set higher than p")
+      print("deriv can't be greater than p")
       exit = 1
     }
     
     p_round = round(p)/p;  q_round = round(q)/q;  d_round = round(deriv+1)/(deriv+1);  m_round = round(nnmatch)/nnmatch
     
-    if (p_round!=1 | q_round!=1 | d_round!=1 | m_round!=1 ){
+    if ((p_round!=1 &p>0) | (q_round!=1&q>0) | d_round!=1 | m_round!=1 ){
       print("p,q,deriv and matches should be integer numbers")
       exit = 1
     }
@@ -183,8 +189,8 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
   w_b_l = rdrobust_kweight(X_l,c,b_l,kernel);	w_b_r = rdrobust_kweight(X_r,c,b_r,kernel)
   ind_h_l = w_h_l> 0;		ind_h_r = w_h_r> 0
   ind_b_l = w_b_l> 0;		ind_b_r = w_b_r> 0
-  N_h_l = sum(ind_h_l);  N_b_l = sum(ind_b_l)
-  N_h_r = sum(ind_h_r);	N_b_r = sum(ind_b_r)
+  N_h_l = sum(ind_h_l); N_b_l = sum(ind_b_l)
+  N_h_r = sum(ind_h_r); N_b_r = sum(ind_b_r)
   
   #if (N_h_l<5 | N_h_r<5 | N_b_l<5 | N_b_r<5){
   #  stop("Not enough observations to perform calculations")
@@ -447,22 +453,22 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
     
   tabl1.str=matrix(NA,4,1)
   rownames(tabl1.str)=c("Number of Obs", "NN Matches", "BW Type", "Kernel Type")
-  dimnames(tabl1.str) <-list(c("Number of Obs", "NN Matches", "BW Type", "Kernel Type"), rep("", dim(tabl1.str)[2]))
+  dimnames(tabl1.str) <-list(c("Number of Obs", "BW Type", "Kernel Type", "VCE Type"), rep("", dim(tabl1.str)[2]))
   tabl1.str[1,1]=N
-  tabl1.str[2,1]=nnmatch
-  tabl1.str[3,1]=bwselect
-  tabl1.str[4,1]=kernel_type
+  tabl1.str[2,1]=bwselect
+  tabl1.str[3,1]=kernel_type
+  tabl1.str[4,1]=vce_type
   
   tabl2.str=matrix(NA,7,2)
   colnames(tabl2.str)=c("Left","Right")
-  rownames(tabl2.str)=c("Number of Obs","Order Loc Poly (p)","Order Bias (q)","BW Loc Poly (h)","BW Bias (b)","rho (h/b)","bias")
+  rownames(tabl2.str)=c("Number of Obs","Eff. Number of Obs", "Order Loc Poly (p)","Order Bias (q)","BW Loc Poly (h)","BW Bias (b)","rho (h/b)")
   tabl2.str[1,]=formatC(c(N_l,N_r),digits=0, format="f")
-  tabl2.str[2,]=formatC(c(p,p),digits=0, format="f")
-  tabl2.str[3,]=formatC(c(q,q),digits=0, format="f")
-  tabl2.str[4,]=formatC(c(h_l,h_r),digits=4, format="f")
-  tabl2.str[5,]=formatC(c(b_l,b_r),digits=4, format="f")
-  tabl2.str[6,]=formatC(c(h_l/b_l,h_r/b_r),digits=4, format="f")
-  tabl2.str[7,]=formatC(c(bias_l,bias_r),  digits=4, format="f")
+  tabl2.str[2,]=formatC(c(N_h_l,N_h_r),digits=0, format="f")
+  tabl2.str[3,]=formatC(c(p,p),    digits=0, format="f")
+  tabl2.str[4,]=formatC(c(q,q),    digits=0, format="f")
+  tabl2.str[5,]=formatC(c(h_l,h_r),digits=4, format="f")
+  tabl2.str[6,]=formatC(c(b_l,b_r),digits=4, format="f")
+  tabl2.str[7,]=formatC(c(h_l/b_l,h_r/b_r),digits=4, format="f")
   
   tabl3.str=matrix("",2,6)
   colnames(tabl3.str)=c("Coef","Std. Err.","z","P>|z|","CI Lower","CI Upper")
@@ -480,7 +486,7 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
     colnames(tabl3.str)=c("Coef","Std. Err.","z","P>|z|","CI Lower","CI Upper")
   }
 
-  out=list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,tabl3.str=tabl3.str,coef=coef,bws=bws,se=se,z=z,pv=pv,ci=ci,p=p,q=q,h=h,b=b,rho=rho,N=N,N_l=eN_l,N_r=eN_r)
+  out=list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,tabl3.str=tabl3.str,coef=coef,bws=bws,se=se,z=z,pv=pv,ci=ci,p=p,q=q,h=h,b=b,rho=rho,N=N,N_l=N_l,N_r=N_r,N_h_l=N_h_l,N_h_r=N_h_r,bias_l=bias_l,bias_r=bias_r)
   out$call <- match.call()
   class(out) <- "rdrobust"
   return(out)

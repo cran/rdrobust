@@ -72,7 +72,7 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
 		exit = 1
 	}
 
-	if (p<=0 ){
+	if (p<0 ){
 		print("p should be a positive number")
 		exit = 1
 	}
@@ -84,9 +84,9 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
 
 	p_ceiling = ceiling(p)/p
 
-	if (p_ceiling!=1) {
-		print("p should be an integer number")
-		exit = 1
+	if (p_ceiling!=1 & p>0) {
+  	print("p should be an integer number")
+  	exit = 1
 	}
 
 	if (exit>0) stop()

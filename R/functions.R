@@ -163,8 +163,9 @@ rdrobust_bw = function(Y, X, T, Z, C, c, o, nu, o_B, h_V, h_B, scale, vce, nnmat
         res_V = rdrobust_res(eX, eY, eT, eZ, predicts_V, hii, vce, nnmatch, dups_V, dupsid_V, o+1)
         V_V = (invG_V%*%rdrobust_vce(dT+dZ, s, R_V*eW, res_V, eC)%*%invG_V)[nu+1,nu+1]
         v = crossprod(R_V*eW,((eX-c)/h_V)^(o+1))
-        Hp = diag(c(1,poly(h_V,degree=o,raw=TRUE)))
-        BConst = (Hp%*%(invG_V%*%v))[nu+1]
+        Hp = 0
+        for (j in 1:(o+1)) Hp[j] = h_V^((j-1))
+        BConst = (Hp*(invG_V%*%v))[nu+1]
         
         w = rdrobust_kweight(X, c, h_B, kernel)
         ind = w> 0 
@@ -217,7 +218,7 @@ rdrobust_bw = function(Y, X, T, Z, C, c, o, nu, o_B, h_V, h_B, scale, vce, nnmat
 }
 
 rdrobust_vce = function(d, s, RX, res, C) {	
-  k = ncol(RX)
+  k = ncol(as.matrix(RX))
   M = matrix(0,k,k)
   n  = length(C)
   if (is.null(C)) {

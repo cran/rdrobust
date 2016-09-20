@@ -106,7 +106,7 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
       exit = 1
     }
     
-    if (p<=0 | q<=0 | deriv<0 | nnmatch<=0 ){
+    if (p<0 | q<0 | deriv<0 | nnmatch<=0 ){
       print("p, q, deriv and matches should be positive integers")
       exit = 1
     }
@@ -116,14 +116,14 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
       exit = 1
     }
     
-    if (deriv>=p){
-      print("deriv should be set higher than p")
+    if (deriv>p){
+      print("deriv can't be greater than p")
       exit = 1
     }
     
     p_round = round(p)/p;    q_round = round(q)/q;    d_round = round(deriv+1)/(deriv+1);    m_round = round(nnmatch)/nnmatch
         
-    if (p_round!=1 | q_round!=1 | d_round!=1 | m_round!=1 ){
+    if ((p_round!=1 &p>0) | (q_round!=1&q>0) | d_round!=1 | m_round!=1 ){
       print("p,q,deriv and matches should be integer numbers")
       exit = 1
     }
