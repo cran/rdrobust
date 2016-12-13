@@ -8,8 +8,9 @@
 ### version 0.8  04Feb2015
 ### version 0.9  28Mar2016
 ### version 0.92 08Aug2016
+### version 0.95 12Dec2016
 
-rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kernel = "uni", h=NULL, 
+rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kernel = "uni", weights=NULL, h=NULL, 
                           hide=FALSE, ci=NULL, shade=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
                           x.lim=NULL, y.lim=NULL, col.dots=NULL, col.lines=NULL, type.dots = NULL,...) {
 
@@ -100,6 +101,12 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
   
   wh_l = rdrobust_kweight(x_l,c,h_l,kernel)
   wh_r = rdrobust_kweight(x_r,c,h_r,kernel)
+  
+  if (!is.null(weights)) {
+    fw_l=weights[x<c];  fw_r=weights[x>=c]
+    wh_l = fw_l*wh_l;	wh_r = fw_r*wh_r
+  }
+  
   select_l = wh_l> 0
   select_r = wh_r> 0
   n_h_l=sum(select_l)

@@ -8,6 +8,7 @@
 ### version 0.8  04Feb2015
 ### version 0.9  28Mar2016
 ### version 0.92 08Aug2016
+### version 0.95 12Dec2016
 
 qrXXinv = function(x, ...) {
   #tcrossprod(solve(qr.R(qr(x, tol = 1e-10)), tol = 1e-10))
@@ -98,9 +99,14 @@ rdrobust_res = function(X, y, T, Z, m, hii, vce, matches, dups, dupsid, d) {
 }
 
 
-rdrobust_bw = function(Y, X, T, Z, C, c, o, nu, o_B, h_V, h_B, scale, vce, nnmatch, kernel, dups, dupsid){
+rdrobust_bw = function(Y, X, T, Z, C, W, c, o, nu, o_B, h_V, h_B, scale, vce, nnmatch, kernel, dups, dupsid){
   dT = dZ = dC = eC = 0
   w = rdrobust_kweight(X, c, h_V, kernel)
+  dW = length(W)
+  if (dW>1) {
+    w = W*w
+  }
+  
   ind_V = w> 0; eY = Y[ind_V];eX = X[ind_V];eW = w[ind_V]
   n_V = sum(ind_V)
   D_V = eY
@@ -168,6 +174,9 @@ rdrobust_bw = function(Y, X, T, Z, C, c, o, nu, o_B, h_V, h_B, scale, vce, nnmat
         BConst = (Hp*(invG_V%*%v))[nu+1]
         
         w = rdrobust_kweight(X, c, h_B, kernel)
+        if (dW>1) {
+          w = W*w
+        }
         ind = w> 0 
         n_B = sum(ind)
         eY = Y[ind];eX = X[ind];eW = w[ind]

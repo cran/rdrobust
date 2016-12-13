@@ -17,8 +17,8 @@ For more details, and related Stata and R packages useful for analysis of RD des
 }
 \usage{rdrobust(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, 
             c = 0,  p = 1, q = 2, deriv = 0, 
-            h = NULL, b = NULL, rho = NULL, scalepar = 1,
-            kernel = "tri", bwselect = "mserd",  scaleregul = 1, sharpbw = FALSE, 
+            h = NULL, b = NULL, rho = NULL, scalepar = 1, kernel = "tri", weights = NULL,
+            bwselect = "mserd",  scaleregul = 1, sharpbw = FALSE, 
             vce = "nn", nnmatch = 3, level = 95, all = FALSE, subset = NULL)}
 \arguments{
   \item{y}{is the dependent variable.}
@@ -31,7 +31,7 @@ For more details, and related Stata and R packages useful for analysis of RD des
   \item{q}{specifies the order of the local-polynomial used to construct the bias-correction; default is \code{q = 2} (local quadratic regression).}
   \item{deriv}{specifies the order of the derivative of the regression functions to be estimated. Default is \code{deriv=0} (for Sharp RD, or for Fuzzy RD if \code{fuzzy} is also specified). Setting \code{deriv=1} results in estimation of a Kink RD design (up to scale), or Fuzzy Kink RD if \code{fuzzy} is also specified.}
   \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
-
+  \item{weights}{is the variable used for optional weighting of the estimation procedure. The unit-specific weights multiply the kernel function.}
   \item{h}{specifies the main bandwidth used to construct the RD point estimator. If not specified, bandwidth \code{h} is computed by the companion command \code{\link{rdbwselect}}. If two bandwidths are specified, the first bandwidth is used for the data below the cutoff and the second bandwidth is used for the data above the cutoff.}
 
   \item{b}{specifies the bias bandwidth used to construct the bias-correction estimator. If not specified, bandwidth \code{b} is computed by the companion command \code{\link{rdbwselect}}. If two bandwidths are specified, the first bandwidth is used for the data below the cutoff and the second bandwidth is used for the data above the cutoff.}
@@ -122,7 +122,6 @@ Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016a. Regression 
 
 Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016b. rdrobust: Software for Regression Discontinuity Designs. Working Paper.
 \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2016_Stata.pdf}.
-
 
 Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014a. Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs. Econometrica 82(6): 2295-2326.
 \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.

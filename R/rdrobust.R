@@ -8,9 +8,10 @@
 ### version 0.8  04Feb2015
 ### version 0.9  28Mar2016
 ### version 0.92 08Aug2016
+### version 0.95 12Dec2016
 
 rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, deriv=0, h=NULL, b=NULL, rho=NULL, 
-                    scalepar=1, kernel="tri", bwselect="mserd", scaleregul=1, sharpbw=FALSE, vce="nn",  nnmatch=3, level=95, all=FALSE, subset = NULL) {
+                    scalepar=1, kernel="tri", weights=NULL, bwselect="mserd", scaleregul=1, sharpbw=FALSE, vce="nn",  nnmatch=3, level=95, all=FALSE, subset = NULL) {
   
   if (!is.null(subset)) {
     x <- x[subset]
@@ -156,7 +157,7 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
     #print("Preparing data.") 
     
     if (is.null(h)) {
-      rdbws=rdbwselect(y=y, x=x,  covs=covs, cluster=cluster, fuzzy=fuzzy, c=c, deriv=deriv, p=p, q=q, vce=vce, bwselect=bwselect, kernel=kernel, scaleregul=scaleregul, sharpbw=sharpbw)
+      rdbws=rdbwselect(y=y, x=x,  covs=covs, cluster=cluster, fuzzy=fuzzy, c=c, deriv=deriv, p=p, q=q, vce=vce, bwselect=bwselect, kernel=kernel, weights=weights, scaleregul=scaleregul, sharpbw=sharpbw)
       h_l = rdbws$bws[1]
       h_r = rdbws$bws[2]
       b_l = rdbws$bws[3]
@@ -187,6 +188,13 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
 
   w_h_l = rdrobust_kweight(X_l,c,h_l,kernel);	w_h_r = rdrobust_kweight(X_r,c,h_r,kernel)
   w_b_l = rdrobust_kweight(X_l,c,b_l,kernel);	w_b_r = rdrobust_kweight(X_r,c,b_r,kernel)
+  
+  if (!is.null(weights)) {
+    fw_l=weights[x<c];  fw_r=weights[x>=c]
+    w_h_l = fw_l*w_h_l;	w_h_r = fw_r*w_h_r
+    w_b_l = fw_l*w_b_l;	w_b_r = fw_r*w_b_r			
+  }
+
   ind_h_l = w_h_l> 0;		ind_h_r = w_h_r> 0
   ind_b_l = w_b_l> 0;		ind_b_r = w_b_r> 0
   N_h_l = sum(ind_h_l); N_b_l = sum(ind_b_l)

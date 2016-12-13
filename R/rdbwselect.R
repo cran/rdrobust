@@ -8,9 +8,10 @@
 ### version 0.8  04Feb2015
 ### version 0.9  28Mar2016
 ### version 0.92 08Aug2016
+### version 0.95 12Dec2016
 
 rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1, q=2, deriv=0, 
-                      kernel="tri", bwselect="mserd", scaleregul=1, sharpbw=FALSE, vce="nn",  nnmatch=3, all=FALSE, subset = NULL){
+                      kernel="tri", weights=NULL, bwselect="mserd", scaleregul=1, sharpbw=FALSE, vce="nn",  nnmatch=3, all=FALSE, subset = NULL){
   
   if (!is.null(subset)) {
     x <- x[subset]
@@ -189,13 +190,16 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
     C_l  = cluster[x<c,,drop=FALSE]; C_r= cluster[x>=c,,drop=FALSE]
     g_l = length(unique(C_l));	g_r = length(unique(C_r))
   }
-                                                                              
+  fw_l = fw_r = 0 
+  if (!is.null(weights)) {
+    fw_l=weights[x<c];  fw_r=weights[x>=c]
+  }                                                                           
     #***********************************************************************
     c_bw = C_c*min(c(1,x_iq/1.349))*N^(-1/5)
   
     #*** Step 1: d_bw
-    C_d_l = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, c=c, o=q+1, nu=q+1, o_B=q+2, h_V=c_bw, h_B=range_l, 0, vce, nnmatch, kernel, dups_l, dupsid_l)
-    C_d_r = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, c=c, o=q+1, nu=q+1, o_B=q+2, h_V=c_bw, h_B=range_r, 0, vce, nnmatch, kernel, dups_r, dupsid_r)
+    C_d_l = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q+1, nu=q+1, o_B=q+2, h_V=c_bw, h_B=range_l, 0, vce, nnmatch, kernel, dups_l, dupsid_l)
+    C_d_r = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q+1, nu=q+1, o_B=q+2, h_V=c_bw, h_B=range_r, 0, vce, nnmatch, kernel, dups_r, dupsid_r)
   
     #if (C_d_l$V=="NaN" | C_d_l$B=="NaN" | C_d_l$R=="NaN") C_d_l = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, c=c, o=q+1, nu=q+1, o_B=q+2, h_V=c_bw, h_B=c_bw, 0, vce, nnmatch, kernel, dups_l, dupsid_l)
     #if (C_d_r$V=="NaN" | C_d_r$B=="NaN" | C_d_r$R=="NaN") C_d_r = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, c=c, o=q+1, nu=q+1, o_B=q+2, h_V=c_bw, h_B=c_bw, 0, vce, nnmatch, kernel, dups_r, dupsid_r)
@@ -209,13 +213,13 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
     if  (bwselect=="msetwo" |  bwselect=="certwo" | bwselect=="msecomb2" | bwselect=="cercomb2"  | all=="TRUE")  {		
       d_bw_l = (  C_d_l$V              /   C_d_l$B^2             )^C_d_l$rate
       d_bw_r = (  C_d_r$V              /   C_d_r$B^2             )^C_d_l$rate
-      C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_l, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
+      C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_l, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
       b_bw_l = (  C_b_l$V              /   (C_b_l$B^2 + scaleregul*C_b_l$R)        )^C_b_l$rate
-      C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_r, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
+      C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_r, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
       b_bw_r = (  C_b_r$V              /   (C_b_r$B^2 + scaleregul*C_b_r$R)        )^C_b_l$rate
-      C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_l, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
+      C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_l, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
       h_bw_l = (  C_h_l$V              /   (C_h_l$B^2 + scaleregul*C_h_l$R)         )^C_h_l$rate
-      C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_r, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
+      C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_r, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
       h_bw_r = (  C_h_r$V              /   (C_h_r$B^2 + scaleregul*C_h_r$R)         )^C_h_l$rate
                   
       #if (C_b_l$V==0 | C_b_l$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) below the threshold. Range defined by bandwidth = %f\n", d_bw_l)  
@@ -227,11 +231,11 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
 #  *** SUM
   if  (bwselect=="msesum" | bwselect=="cersum" |  bwselect=="msecomb1" | bwselect=="msecomb2" |  bwselect=="cercomb1" | bwselect=="cercomb2"  |  all=="TRUE")  {
     d_bw_s = ( (C_d_l$V + C_d_r$V)  /  (C_d_r$B + C_d_l$B)^2 )^C_d_l$rate
-    C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_s, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
-    C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_s, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
+    C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_s, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
+    C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_s, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
     b_bw_s = ( (C_b_l$V + C_b_r$V)  /  ((C_b_r$B + C_b_l$B)^2 + scaleregul*(C_b_r$R+C_b_l$R)) )^C_b_l$rate
-    C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_s, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
-    C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_s, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
+    C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_s, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
+    C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_s, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
     h_bw_s = ( (C_h_l$V + C_h_r$V)  /  ((C_h_r$B + C_h_l$B)^2 + scaleregul*(C_h_r$R + C_h_l$R)) )^C_h_l$rate
 
     #if (C_b_l$V==0 | C_b_l$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) below the threshold. Range defined by bandwidth = %f\n", d_bw_s)  
@@ -244,11 +248,11 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
 #                     *** RD
 if  (bwselect=="mserd" | bwselect=="cerrd" | bwselect=="msecomb1" | bwselect=="msecomb2" | bwselect=="cercomb1" | bwselect=="cercomb2" | bwselect=="" | all=="TRUE" ) {
   d_bw_d = ( (C_d_l$V + C_d_r$V)  /  (C_d_r$B - C_d_l$B)^2 )^C_d_l$rate
-  C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
-  C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
+  C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
+  C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
   b_bw_d = ( (C_b_l$V + C_b_r$V)  /  ((C_b_r$B - C_b_l$B)^2 + scaleregul*(C_b_r$R + C_b_l$R)) )^C_b_l$rate
-  C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
-  C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_d, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
+  C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
+  C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_d, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
   h_bw_d = ( (C_h_l$V + C_h_r$V)  /  ((C_h_r$B - C_h_l$B)^2 + scaleregul*(C_h_r$R + C_h_l$R)) )^C_h_l$rate
     
   #if (C_b_l$V==0 | C_b_l$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) below the threshold. Range defined by bandwidth = %f\n", d_bw_d)  

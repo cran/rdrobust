@@ -15,8 +15,8 @@ For more details, and related Stata and R packages useful for analysis of RD des
 }
 \usage{
 rdplot(y, x, subset = NULL, c = 0, p = 4, nbins = NULL, binselect = "esmv",  scale = NULL,
-          kernel = "uni", h = NULL, hide = FALSE, ci = NULL, shade = FALSE,
-          par=NULL, title = NULL, x.label = NULL, y.label = NULL, 
+          kernel = "uni", weights = NULL, h = NULL, hide = FALSE, ci = NULL, 
+          shade = FALSE, par = NULL, title = NULL, x.label = NULL, y.label = NULL, 
           x.lim = NULL, y.lim = NULL, col.dots = NULL, col.lines = NULL, 
           type.dots = NULL,...)
 }
@@ -28,7 +28,7 @@ rdplot(y, x, subset = NULL, c = 0, p = 4, nbins = NULL, binselect = "esmv",  sca
   \item{p}{specifies the order of the global-polynomial used to approximate the population conditional mean functions for control and treated units; default is \code{p = 4}.} 
   
   \item{kernel}{specifies the kernel function used to construct the local-polynomial estimator(s). Options are: \code{triangular}, \code{epanechnikov}, and \code{uniform}. Default is \code{kernel=uniform} (i.e., equal/no weighting to all observations on the support of the kernel).}
-
+  \item{weights}{is the variable used for optional weighting of the estimation procedure. The unit-specific weights multiply the kernel function.}
 \item{h}{specifies the bandwidth used to construct the (global) polynomial fits given the kernel choice \code{kernel}.
 If not specified, the bandwidths are chosen to span the full support of the data. If two bandwidths are specified, the first bandwidth is used for the data below the cutoff and the second bandwidth is used for the data above the cutoff.}
 

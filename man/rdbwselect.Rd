@@ -17,8 +17,8 @@ For more details, and related Stata and R packages useful for analysis of RD des
  
 }
 \usage{rdbwselect(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, 
-              c = 0, p = 1, q = 2, deriv = 0,
-              kernel = "tri", bwselect = "mserd", scaleregul = 1, sharpbw = FALSE,
+              c = 0, p = 1, q = 2, deriv = 0, kernel = "tri", weights = NULL,
+              bwselect = "mserd", scaleregul = 1, sharpbw = FALSE,
               vce = "nn", nnmatch = 3, all = FALSE, subset = NULL)}
 \arguments{
   \item{y}{is the dependent variable.}
@@ -31,6 +31,7 @@ For more details, and related Stata and R packages useful for analysis of RD des
   \item{q}{specifies the order of the local-polynomial used to construct the bias-correction; default is \code{q = 2} (local quadratic regression).}
   \item{deriv}{specifies the order of the derivative of the regression functions to be estimated. Default is \code{deriv=0} (for Sharp RD, or for Fuzzy RD if \code{fuzzy} is also specified). Setting \code{deriv=1} results in estimation of a Kink RD design (up to scale), or Fuzzy Kink RD if \code{fuzzy} is also specified.}
   \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
+    \item{weights}{is the variable used for optional weighting of the estimation procedure. The unit-specific weights multiply the kernel function.}
 \item{bwselect}{specifies the bandwidth selection procedure to be used. Options are:
 
 \code{mserd} one common MSE-optimal bandwidth selector for the RD treatment effect estimator.
@@ -97,7 +98,6 @@ Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016a. Regression 
 
 Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016b. rdrobust: Software for Regression Discontinuity Designs. Working Paper.
 \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2016_Stata.pdf}.
-
 
 Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014a. Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs. Econometrica 82(6): 2295-2326.
 \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
