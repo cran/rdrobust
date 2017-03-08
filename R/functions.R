@@ -9,6 +9,7 @@
 ### version 0.9  28Mar2016
 ### version 0.92 08Aug2016
 ### version 0.95 12Dec2016
+### version 0.96 01Mar2017
 
 qrXXinv = function(x, ...) {
   #tcrossprod(solve(qr.R(qr(x, tol = 1e-10)), tol = 1e-10))

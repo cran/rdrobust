@@ -9,14 +9,19 @@
 ### version 0.9  28Mar2016
 ### version 0.92 08Aug2016
 ### version 0.95 12Dec2016
+### version 0.96 07Mar2017
 
-rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, deriv=0, h=NULL, b=NULL, rho=NULL, 
-                    scalepar=1, kernel="tri", weights=NULL, bwselect="mserd", scaleregul=1, sharpbw=FALSE, vce="nn",  nnmatch=3, level=95, all=FALSE, subset = NULL) {
+rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b=NULL, rho=NULL, covs = NULL, 
+                    kernel="tri", weights=NULL, bwselect="mserd", 
+                    vce="nn", cluster=NULL, nnmatch=3, level=95, scalepar=1, scaleregul=1, sharpbw=FALSE, all=FALSE, subset = NULL) {
   
   if (!is.null(subset)) {
     x <- x[subset]
     y <- y[subset]
   }
+  
+  if (is.null(p)) p=1
+  if (!is.null(p) & is.null(q)) q=p+1
   
   na.ok <- complete.cases(x) & complete.cases(y)
   
@@ -107,13 +112,13 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
       exit = 1
     }
     
-    if (p>=q & q>0){
-      print("p should be set higher than q")
+    if (p>=q){
+      print("q should be set higher than p")
       exit = 1
     }
     
     if (deriv>p & deriv>0 ){
-      print("deriv can't be greater than p")
+      print("deriv can only be equal or lower p")
       exit = 1
     }
     
@@ -354,7 +359,7 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
 
       tau_T_cl_l = factorial(deriv)*t(s_T)%*%c(beta_p_l[(deriv+1),1], beta_p_l[(deriv+1),colsZ])
       tau_T_cl_r = factorial(deriv)*t(s_T)%*%c(beta_p_r[(deriv+1),2], beta_p_r[(deriv+1),colsZ])
-      tau_t_bc_l = factorial(deriv)*t(s_T)%*%c(beta_bc_l[(deriv+1),1],beta_bc_l[(deriv+1),colsZ])
+      tau_T_bc_l = factorial(deriv)*t(s_T)%*%c(beta_bc_l[(deriv+1),1],beta_bc_l[(deriv+1),colsZ])
       tau_T_bc_r = factorial(deriv)*t(s_T)%*%c(beta_bc_r[(deriv+1),2],beta_bc_r[(deriv+1),colsZ])
 
       tau_cl = tau_Y_cl/tau_T_cl
@@ -450,6 +455,9 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
     ci=ci
 
   bws=matrix(c(h_l,b_l,h_r,b_r),2,2)
+  colnames(bws)=c("left","right")
+  rownames(bws)=c("h","b")
+  
   rownames(coef)=rownames(se)=rownames(se)=rownames(z)=rownames(pv)=c("Conventional","Bias-Corrected","Robust")
   colnames(coef)="Coeff"
   colnames(se)="Std. Err."
@@ -494,7 +502,13 @@ rdrobust = function(y, x, covs = NULL, fuzzy=NULL, cluster=NULL, c=0, p=1, q=2, 
     colnames(tabl3.str)=c("Coef","Std. Err.","z","P>|z|","CI Lower","CI Upper")
   }
 
-  out=list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,tabl3.str=tabl3.str,coef=coef,bws=bws,se=se,z=z,pv=pv,ci=ci,p=p,q=q,h=h,b=b,rho=rho,N=N,N_l=N_l,N_r=N_r,N_h_l=N_h_l,N_h_r=N_h_r,bias_l=bias_l,bias_r=bias_r)
+  out=list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,tabl3.str=tabl3.str,
+           N=N, N_l=N_l, N_r=N_r, N_h_l=N_h_l, N_b_l=N_b_l, N_b_r=N_b_r,
+           c=c, p=p, q=q, h_l=bws[1,1],h_r=bws[1,2], b_l=bws[2,1],b_r=bws[2,2],
+           tau_cl=tau_cl, tau_bc=tau_bc, se_tau_cl=se_tau_cl, se_tau_rb=se_tau_rb, bias_l=bias_l,bias_r=bias_r,
+           beta_p_l=beta_p_l, beta_p_r=beta_p_r, 
+           V_cl_l=V_Y_cl_l, V_cl_r=V_Y_cl_r, V_rb_l=V_Y_bc_l, V_rb_r=V_Y_bc_l,
+           coef=coef,bws=bws,se=se, z=z, pv=pv, ci=ci)
   out$call <- match.call()
   class(out) <- "rdrobust"
   return(out)

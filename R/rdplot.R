@@ -9,10 +9,11 @@
 ### version 0.9  28Mar2016
 ### version 0.92 08Aug2016
 ### version 0.95 12Dec2016
+### version 0.96 07Mar2017
 
-rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kernel = "uni", weights=NULL, h=NULL, 
-                          hide=FALSE, ci=NULL, shade=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
-                          x.lim=NULL, y.lim=NULL, col.dots=NULL, col.lines=NULL, type.dots = NULL,...) {
+rdplot = function(y, x, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kernel = "uni", weights=NULL, h=NULL, 
+                  support=NULL, subset = NULL, hide=FALSE, ci=NULL, shade=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
+                  x.lim=NULL, y.lim=NULL, col.dots=NULL, col.lines=NULL, type.dots = NULL,...) {
 
   if (!is.null(subset)) {
     x <- x[subset]
@@ -21,17 +22,22 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
   na.ok <- complete.cases(x) & complete.cases(y)
   x <- x[na.ok]
   y <- y[na.ok]
-  
-  if (is.null(col.lines)) col.lines = "blue"
-  if (is.null(col.dots))  col.dots  = 1
-  if (is.null(type.dots)) type.dots = 20
-    
+
 	x_l = x[x<c]; x_r = x[x>=c]	
   y_l = y[x<c];	y_r = y[x>=c]
 	x_min = min(x);	x_max = max(x)
-	range_l = c - min(x_l)
+	
+	if (!is.null(support)) {
+	  support_l = support[1]
+	  support_r = support[2]
+	  if (support_l<x_min) x_min = support_l
+	  if (support_r>x_max) x_max = support_r
+	}
+	
+	range_l = c - x_min
+	range_r = x_max - c
+	
 	n_l = length(x_l)
-	range_r = max(x_r) - c
 	n_r = length(x_r)
 	n = n_l + n_r
   meth="es"
@@ -174,13 +180,13 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
   drk_i_r = matrix(NA,n_r-1,k);	rk_i_r  = matrix(NA,n_r-1,(k+1))
                        
   for (j in 1:(k+1)) {
-  rk_i_l[,j] = x_bar_i_l^(j-1)
-  rk_i_r[,j] = x_bar_i_r^(j-1)
+    rk_i_l[,j] = x_bar_i_l^(j-1)
+    rk_i_r[,j] = x_bar_i_r^(j-1)
   }
                        
   for (j in 1:k) {
-  drk_i_l[,j] = j*x_bar_i_l^(j-1)
-  drk_i_r[,j] = j*x_bar_i_r^(j-1)
+    drk_i_l[,j] = j*x_bar_i_l^(j-1)
+    drk_i_r[,j] = j*x_bar_i_r^(j-1)
   }
   
   mu1_i_hat_l = drk_i_l%*%(gamma_k1_l[2:(k+1)])
@@ -312,8 +318,8 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
   jump_l = range_l/J_star_l;jump_r = range_r/J_star_r;
   
   if (meth=="es") {
-    jumps_l=seq(min(x_l),max(x_l),jump_l)
-    jumps_r=seq(min(x_r),max(x_r),jump_r)
+    jumps_l=seq(x_min,c,jump_l)
+    jumps_r=seq(c,x_max,jump_r)
     #binselect_type="Evenly-Spaced"
   }   else if (meth=="qs") {
     jumps_l=quantile(x_l,probs=seq(0,1,1/J_star_l))
@@ -340,7 +346,7 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
 	}
 	
 	bin_xlmean[J_star_l]=mean(c(jumps_l[J_star_l],c))
-	bin_xrmean[J_star_r]=mean(c(jumps_r[J_star_r],max(x_r)))
+	bin_xrmean[J_star_r]=mean(c(jumps_r[J_star_r],x_max))
   
   
   bin_x=c(bin_x_l,bin_x_r)
@@ -353,25 +359,18 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
 	
   if (hide=="FALSE") {
   
-  if (is.null(title)){
-    title="RD Plot"
-  } 
-  
-  if (is.null(x.label)){
-    x.label="X axis"
-  }
-  
-  if (is.null(y.label)){
-    y.label="Y axis"
-  }
-  
-  if (is.null(x.lim)){
-    x.lim=c(min(x_l),max(x_r))
-  }
-  
-  if (is.null(y.lim)){
-    y.lim=c(min(c(y_l,y_r)),max(c(y_l,y_r)))
-  }
+    if (is.null(col.lines)) col.lines = "blue"
+    if (is.null(col.dots))  col.dots  = 1
+    if (is.null(type.dots)) type.dots = 20
+    if (is.null(title)) title="RD Plot"
+    if (is.null(x.label)) x.label="X axis"
+    if (is.null(y.label)) y.label="Y axis"
+    if (is.null(x.lim)) x.lim=c(min(x_l),max(x_r))
+    if (is.null(y.lim)) y.lim=c(min(c(y_l,y_r)),max(c(y_l,y_r)))
+
+    cil_bin = bin_ymean 
+    cir_bin = bin_ymean 
+    
     par=par
     if (is.null(ci)) {
       plot(bin_xmean,bin_ymean, main=title, xlab=x.label, ylab=y.label, ylim=y.lim, xlim=x.lim, col=col.dots, pch=type.dots,...)
@@ -401,7 +400,7 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
       cil_bin = bin_ymean - quant*bin_ySD/sqrt(bin_yN)
       cir_bin = bin_ymean + quant*bin_ySD/sqrt(bin_yN)
     
-       
+   
      if (shade==TRUE){
       plot(bin_xmean,bin_ymean, main=title, xlab=x.label, ylab=y.label, ylim=y.lim, xlim=x.lim, col=col.dots, pch=type.dots,...)
       polygon(c(rev(bin_xmean),bin_xmean),c(rev(cil_bin),cir_bin),col = "grey75")
@@ -419,44 +418,59 @@ rdplot = function(y, x, subset = NULL, c=0, p=4, nbins=NULL, binselect="esmv", s
     
     }
 
-    tabl1.str=matrix(NA,14,2)
+  	cutoffs = c(jumps_l,jumps_r[2:length(jumps_r)])
+	  bin.low = cutoffs[1:(length(cutoffs)-1)]
+  	bin.upp = cutoffs[2:length(cutoffs)]
+	
+  	bin_length = bin.upp-bin.low
+  	bin_avg_l = mean(bin_length[1:J_star_l])
+  	bin_med_l = median(bin_length[1:J_star_l])
+  	
+  	bin_avg_r = mean(bin_length[(J_star_l+1):length(bin_length)])
+  	bin_med_r = median(bin_length[(J_star_l+1):length(bin_length)])
+ 
+  	tabl1.str=matrix(NA,15,2)
     tabl1.str[1,]  = formatC(c(n_l,n_r),digits=0, format="f")
     tabl1.str[2,]  = formatC(c(p,p),digits=0, format="f")
     tabl1.str[3,]  = formatC(c(scale_l,scale_r),digits=0, format="f") 
     tabl1.str[4,]  = c("","")
     tabl1.str[5,]  = formatC(c(J_star_l,J_star_r),digits=0, format="f")  
-    tabl1.str[6,]  = formatC(c(jump_l,jump_r),digits=4, format="f") 
-    tabl1.str[7,]  = c("","")
-    tabl1.str[8,]  = formatC(c(J_IMSE),digits=0, format="f")
-    tabl1.str[9,]  = formatC(c(J_MV),digits=0, format="f")
-    tabl1.str[10,]  = c("","")
+    tabl1.str[6,]  = formatC(c(bin_avg_l,bin_avg_r),digits=4, format="f") 
+    tabl1.str[7,]  = formatC(c(bin_med_l,bin_med_r),digits=4, format="f") 
+    tabl1.str[8,]  = c("","")
+    tabl1.str[9,]  = formatC(c(J_IMSE),digits=0, format="f")
+    tabl1.str[10,]  = formatC(c(J_MV),digits=0, format="f")
     tabl1.str[11,]  = c("","")
-    tabl1.str[12,]  = formatC(c(scale_l,scale_r),digits=4, format="f")
-    tabl1.str[13,]  = formatC(c(1/(1+scale_l^3), 1/(1+scale_r^3)),digits=4, format="f")
-    tabl1.str[14,] = formatC(c(scale_l^3/(1+scale_l^3), scale_r^3/(1+scale_r^3)),digits=4, format="f")
+    tabl1.str[12,]  = c("","")
+    tabl1.str[13,]  = formatC(c(scale_l,scale_r),digits=4, format="f")
+    tabl1.str[14,]  = formatC(c(1/(1+scale_l^3), 1/(1+scale_r^3)),digits=4, format="f")
+    tabl1.str[15,] = formatC(c(scale_l^3/(1+scale_l^3), scale_r^3/(1+scale_r^3)),digits=4, format="f")
 
-    rownames(tabl1.str)=c("Number of Obs.","Polynomial Order","Scale", "","Selected Bins","Bin Length","", "IMSE-optimal bins","Mimicking Variance bins","","Relative to IMSE-optimal:","Implied scale","WIMSE variance weight","WIMSE bias weight")
+    rownames(tabl1.str)=c("Number of Obs.","Polynomial Order","Scale", "","Selected Bins","Average Bin Length","Median Bin Length","", "IMSE-optimal bins","Mimicking Variance bins","","Relative to IMSE-optimal:","Implied scale","WIMSE variance weight","WIMSE bias weight")
     colnames(tabl1.str)=c("Left","Right")
     
-    results=matrix(NA,10,2)
+    results=matrix(NA,11,2)
     results[1,] = c(n_l,n_r)
     results[2,] = c(p,p)
     results[3,] = c(scale_l,scale_r)
     results[4,] = c(J_star_l,J_star_r)
-    results[5,] = c(jump_l,jump_r)
-    results[6,] = J_IMSE
-    results[7,] = J_MV
-    results[8,] = c(scale_l,scale_r)
-    results[9,] = c(1/(1+scale_l^3), 1/(1+scale_r^3))
-    results[10,] = c(scale_l^3/(1+scale_l^3), scale_r^3/(1+scale_r^3))
-    rownames(results)=c("Number of Obs.","Polynomial Order","Chosen Scale","Selected bins","Bin Length","IMSE-optimal bins","Mimicking Variance bins","Implied scale","WIMSE variance weight","WIMSE bias weight")
+    results[5,] = c(bin_avg_l,bin_avg_r)
+    results[6,] = c(bin_med_l,bin_med_r)
+    results[7,] = J_IMSE
+    results[8,] = J_MV
+    results[9,] = c(scale_l,scale_r)
+    results[10,] = c(1/(1+scale_l^3), 1/(1+scale_r^3))
+    results[11,] = c(scale_l^3/(1+scale_l^3), scale_r^3/(1+scale_r^3))
+    rownames(results)=c("Number of Obs.","Polynomial Order","Chosen Scale","Selected bins","Bins Average Length","Bins Median Length","IMSE-optimal bins","Mimicking Variance bins","Implied scale","WIMSE variance weight","WIMSE bias weight")
     colnames(results)=c("Left","Right")
+    
+    vars=data.frame("bin.x"=bin_xmean, "bin.y"=bin_ymean, "bin.low"=bin.low, "bin.upp"=bin.upp, "ci.low"=cil_bin, "ci.upp"=cir_bin)
     
     coef=matrix(NA,p+1,2)
     coef[,1] = c(gamma_p1_l)
     coef[,2] = c(gamma_p1_r)
     colnames(coef)=c("Left","Right")
-    out=list(method=binselect_type,results=results,coef=coef,tabl1.str=tabl1.str)
+    out=list(binselect=binselect_type,results=results,coef=coef,tabl1.str=tabl1.str,genvars=vars,N_l=n_l,N_r=n_r,c=c,J_star_l=J_star_l,J_star_r=J_star_r)
     
     out$call <- match.call()
     class(out) <- "rdplot"

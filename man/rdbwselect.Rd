@@ -5,31 +5,27 @@
 \title{Bandwidth Selection Procedures for Local Polynomial Regression Discontinuity Estimators}
 \description{
 
-\code{\link{rdbwselect}} implements bandwidth selectors for local polynomial Regression Discontinuity (RD) point estimators and inference procedures developed in Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2016a), and Calonico, Cattaneo, Farrell and Titiunik (2016).
+\code{\link{rdbwselect}} implements bandwidth selectors for local polynomial Regression Discontinuity (RD) point estimators and inference procedures developed in Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2017), and Calonico, Cattaneo, Farrell and Titiunik (2016).
 
-Companion commands are: \code{\link{rdrobust}} for point estimation and inference procedures, and \code{\link{rdplot}} for data-driven RD plots (see
-Calonico, Cattaneo and Titiunik (2015a) for details).
+Companion commands are: \code{\link{rdrobust}} for point estimation and inference procedures, and \code{\link{rdplot}} for data-driven RD plots (see Calonico, Cattaneo and Titiunik (2015a) for details).
 
-A detailed introduction to this command is given in Calonico, Cattaneo and Titiunik (2015b) and Calonico, Cattaneo, Farrell and Titiunik (2016b). A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014b).
+A detailed introduction to this command is given in Calonico, Cattaneo and Titiunik (2015b) and Calonico, Cattaneo, Farrell and Titiunik (2017). A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014b).
    
 For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://sites.google.com/site/rdpackages/}
-
- 
 }
-\usage{rdbwselect(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, 
-              c = 0, p = 1, q = 2, deriv = 0, kernel = "tri", weights = NULL,
-              bwselect = "mserd", scaleregul = 1, sharpbw = FALSE,
-              vce = "nn", nnmatch = 3, all = FALSE, subset = NULL)}
+\usage{rdbwselect(y, x, c = 0,  fuzzy = NULL, deriv = 0, p = NULL, q = NULL, covs = NULL,  
+              kernel = "tri", weights = NULL, bwselect = "mserd", 
+              vce = "nn",  cluster = NULL, nnmatch = 3, 
+              scaleregul = 1, sharpbw = FALSE, all = FALSE, subset = NULL)}
 \arguments{
   \item{y}{is the dependent variable.}
   \item{x}{is the running variable (a.k.a. score or forcing variable).}
-  \item{covs}{specifies additional covariates to be used for estimation and inference.}
-  \item{fuzzy}{specifies the treatment status variable used to implement fuzzy RD estimation (or Fuzzy Kink RD if \code{deriv=1} is also specified). Default is Sharp RD design and hence this option is not used.}
-  \item{cluster}{indicates the cluster ID variable used for cluster-robust variance estimation with degrees-of-freedom weights. By default it is combined with \code{vce=nn} for cluster-robust nearest neighbor variance estimation. Another option is plug-in residuals combined with \code{vce=hc0}.}
   \item{c}{specifies the RD cutoff in \code{x}; default is \code{c = 0}.}
+  \item{fuzzy}{specifies the treatment status variable used to implement fuzzy RD estimation (or Fuzzy Kink RD if \code{deriv=1} is also specified). Default is Sharp RD design and hence this option is not used.}
+    \item{deriv}{specifies the order of the derivative of the regression functions to be estimated. Default is \code{deriv=0} (for Sharp RD, or for Fuzzy RD if \code{fuzzy} is also specified). Setting \code{deriv=1} results in estimation of a Kink RD design (up to scale), or Fuzzy Kink RD if \code{fuzzy} is also specified.}
   \item{p}{specifies the order of the local-polynomial used to construct the point-estimator; default is \code{p = 1} (local linear regression).}
   \item{q}{specifies the order of the local-polynomial used to construct the bias-correction; default is \code{q = 2} (local quadratic regression).}
-  \item{deriv}{specifies the order of the derivative of the regression functions to be estimated. Default is \code{deriv=0} (for Sharp RD, or for Fuzzy RD if \code{fuzzy} is also specified). Setting \code{deriv=1} results in estimation of a Kink RD design (up to scale), or Fuzzy Kink RD if \code{fuzzy} is also specified.}
+    \item{covs}{specifies additional covariates to be used for estimation and inference.}
   \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
     \item{weights}{is the variable used for optional weighting of the estimation procedure. The unit-specific weights multiply the kernel function.}
 \item{bwselect}{specifies the bandwidth selection procedure to be used. Options are:
@@ -55,13 +51,7 @@ For more details, and related Stata and R packages useful for analysis of RD des
 \code{cercomb2} for median(\code{certwo},\code{cerrd},\code{cersum}), for each side of the cutoff separately.
 
 Note: MSE = Mean Square Error; CER = Coverage Error Rate.
-Default is \code{bwselect=mserd}. For details on implementation see Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2016a),
-and Calonico, Cattaneo, Farrell and Titiunik (2016), and the companion software articles.}
-
-  \item{scaleregul}{specifies scaling factor for the regularization term added to the denominator of the bandwidth selectors. Setting \code{scaleregul = 0} removes the regularization term from the bandwidth selectors; default is \code{scaleregul = 1}.}
-
-\item{sharpbw}{option to perform fuzzy RD estimation using a bandwidth selection procedure for the sharp RD model. This option is automatically selected if there is perfect compliance at either side of the threshold.}
-
+Default is \code{bwselect=mserd}. For details on implementation see Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2017), and Calonico, Cattaneo, Farrell and Titiunik (2016), and the companion software articles.}
   \item{vce}{specifies the procedure used to compute the variance-covariance matrix estimator.
 Options are:
 
@@ -76,28 +66,35 @@ Options are:
 \code{hc3} for heteroskedasticity-robust plug-in residuals variance estimator with \code{hc3} weights.
 
 Default is \code{vce=nn}.}
+  \item{cluster}{indicates the cluster ID variable used for cluster-robust variance estimation with degrees-of-freedom weights. By default it is combined with \code{vce=nn} for cluster-robust nearest neighbor variance estimation. Another option is plug-in residuals combined with \code{vce=hc0}.}
   
-    \item{nnmatch}{to be combined with for \code{vce=nn} for heteroskedasticity-robust nearest neighbor variance estimator with \code{nnmatch} indicating the minimum number of neighbors to be used. Default is \code{nnmatch=3}}
+  \item{nnmatch}{to be combined with for \code{vce=nn} for heteroskedasticity-robust nearest neighbor variance estimator with \code{nnmatch} indicating the minimum number of neighbors to be used. Default is \code{nnmatch=3}}
+  \item{scaleregul}{specifies scaling factor for the regularization term added to the denominator of the bandwidth selectors. Setting \code{scaleregul = 0} removes the regularization term from the bandwidth selectors; default is \code{scaleregul = 1}.}
+  \item{sharpbw}{option to perform fuzzy RD estimation using a bandwidth selection procedure for the sharp RD model. This option is automatically selected if there is perfect compliance at either side of the threshold.}
   \item{all}{if specified, \code{\link{rdbwselect}} reports all available bandwidth selection procedures.}
   \item{subset}{an optional vector specifying a subset of observations to be used.}
 }
 \value{
+  \item{N_l}{sample size used to the left of the cutoff.}
+  \item{N_r}{sample size used to the right of the cutoff.}
+  \item{c}{cutoff value.}
+  \item{p}{order of the local-polynomial used to construct the point-estimator.}
+  \item{q}{order of the local-polynomial used to construct the bias-correction estimator.}
   \item{bws}{matrix containing the estimated bandwidths for each selected procedure.}
   \item{bwselect}{bandwidth selection procedure employed.}
   \item{kernel}{kernel function used to construct the local-polynomial estimator(s).}
-  \item{p}{order of the local-polynomial used to construct the point-estimator.}
-  \item{q}{order of the local-polynomial used to construct the bias-correction estimator.}
+
 }
 \references{
 
-Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2016. On the Effect of Bias Estimation on Coverage Accuracy in Nonparametric Inference. Working Paper.
-\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell_2016_JASA.pdf}.
+Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2017. On the Effect of Bias Estimation on Coverage Accuracy in Nonparametric Inference. Journal of the American Statistical Association, forthcoming.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell_2017_JASA.pdf}.
 
-Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016a. Regression Discontinuity Designs using Covariates. Working Paper.
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. rdrobust: Software for Regression Discontinuity Designs. Stata Journal, forthcoming.
+\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}.
+
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016. Regression Discontinuity Designs using Covariates. Working Paper.
 \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2016_wp.pdf}.
-
-Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016b. rdrobust: Software for Regression Discontinuity Designs. Working Paper.
-\url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2016_Stata.pdf}.
 
 Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014a. Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs. Econometrica 82(6): 2295-2326.
 \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.

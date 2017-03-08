@@ -9,14 +9,20 @@
 ### version 0.9  28Mar2016
 ### version 0.92 08Aug2016
 ### version 0.95 12Dec2016
+### version 0.96 07Mar2017
 
-rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1, q=2, deriv=0, 
-                      kernel="tri", weights=NULL, bwselect="mserd", scaleregul=1, sharpbw=FALSE, vce="nn",  nnmatch=3, all=FALSE, subset = NULL){
+rdbwselect = function(y, x, c=0, fuzzy = NULL, deriv=0, p=NULL, q=NULL, covs = NULL,  
+                      kernel="tri", weights=NULL, bwselect="mserd",  
+                      vce="nn", cluster = NULL,  nnmatch=3,  scaleregul=1, 
+                      sharpbw=FALSE,  all=FALSE, subset = NULL){
   
   if (!is.null(subset)) {
     x <- x[subset]
     y <- y[subset]
   }
+  
+  if (is.null(p)) p=1
+  if (!is.null(p) & is.null(q)) q=p+1
   
   na.ok <- complete.cases(x) & complete.cases(y)
   
@@ -118,7 +124,7 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
     }
     
     if (deriv>p){
-      print("deriv can't be greater than p")
+      print("deriv can only be equal or lower p")
       exit = 1
     }
     
@@ -143,11 +149,7 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
     C_c=2.576
   }
   
-
-
-  
   #***********************************************************************
-
   dZ=Z_l=Z_r=T_l=T_r=C_l=C_r=Cind_l=Cind_r=g_l=g_r=NULL
 
   dups_l = dupsid_l = matrix(0,N_l,1)
@@ -171,7 +173,6 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
       i=i+dups_r[i]
     }
   } 
-  
   
   if (!is.null(covs)) {
     dZ = ncol(covs)
@@ -207,8 +208,7 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
     #if (C_d_r$V==. | C_d_r$B==. | C_d_r$R==.) display("Invertibility problem in the computation of preliminary bandwidth above the threshold")  
     #if (C_d_l$V==0 | C_d_l$B==0) display("Not enough variability to compute the preliminary bandwidth below the threshold. Range defined by bandwidth: ")  
     #if (C_d_r$V==0 | C_d_r$B==0) display("Not enough variability to compute the preliminary bandwidth above the threshold. Range defined by bandwidth: ")  
-    
-    
+ 
     #*** TWO
     if  (bwselect=="msetwo" |  bwselect=="certwo" | bwselect=="msecomb2" | bwselect=="cercomb2"  | all=="TRUE")  {		
       d_bw_l = (  C_d_l$V              /   C_d_l$B^2             )^C_d_l$rate
@@ -244,8 +244,7 @@ rdbwselect = function(y, x, covs = NULL, fuzzy = NULL, cluster = NULL, c=0, p=1,
     #if (C_h_r$V==0 | C_h_r$B==0) printf("{err}Not enough variability to compute the loc. poly. bandwidth (h) above the threshold. Range defined by bandwidth = %f\n", b_bw_s) 
 }
 
-
-#                     *** RD
+    #                     *** RD
 if  (bwselect=="mserd" | bwselect=="cerrd" | bwselect=="msecomb1" | bwselect=="msecomb2" | bwselect=="cercomb1" | bwselect=="cercomb2" | bwselect=="" | all=="TRUE" ) {
   d_bw_d = ( (C_d_l$V + C_d_r$V)  /  (C_d_r$B - C_d_l$B)^2 )^C_d_l$rate
   C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
@@ -266,7 +265,6 @@ if  (bwselect=="mserd" | bwselect=="cerrd" | bwselect=="msecomb1" | bwselect=="m
 #if (C_h_l$V==. | C_h_l$B==. | C_h_l$R==.) printf("{err}Invertibility problem in the computation of loc. poly. bandwidth (h) below the threshold") 
 #if (C_h_r$V==. | C_h_r$B==. | C_h_r$R==.) printf("{err}Invertibility problem in the computation of loc. poly. bandwidth (h) above the threshold") 
          
-                     
 if  (bwselect=="mserd" | bwselect=="cerrd" | bwselect=="msecomb1" | bwselect=="msecomb2" | bwselect=="cercomb1" | bwselect=="cercomb2" | bwselect=="" | all=="TRUE" ) {
   h_mserd = x_sd*h_bw_d
   b_mserd = x_sd*b_bw_d
@@ -326,38 +324,36 @@ cer_b = 1
 
 
 if (all=="FALSE"){
-  results = matrix(NA,1,4)
-  colnames(results)=c("h_l","h_r","b_l","b_r")
-  #rownames(results)=c("CCT","IK","CV")
-  rownames(results)=bwselect
-  if  (bwselect=="mserd" | bwselect=="") results[1,] = c(h_mserd,      h_mserd,      b_mserd,      b_mserd)
-  if  (bwselect=="msetwo")   results[1,] = c(h_msetwo_l,   h_msetwo_r,   b_msetwo_l,   b_msetwo_r)
-  if  (bwselect=="msesum")   results[1,] = c(h_msesum,     h_msesum,     b_msesum,     b_msesum)
-  if  (bwselect=="msecomb1") results[1,] = c(h_msecomb1,   h_msecomb1,   b_msecomb1,   b_msecomb1)
-  if  (bwselect=="msecomb2") results[1,] = c(h_msecomb2_l, h_msecomb2_r, b_msecomb2_l, b_msecomb2_r) 
-  if  (bwselect=="cerrd")    results[1,] = c(h_cerrd,      h_cerrd,      b_cerrd,      b_cerrd)
-  if  (bwselect=="certwo")   results[1,] = c(h_certwo_l,   h_certwo_r,   b_certwo_l,   b_certwo_r)
-  if  (bwselect=="cersum")   results[1,] = c(h_cersum,     h_cersum,     b_cersum,     b_cersum)
-  if  (bwselect=="cercomb1") results[1,] = c(h_cercomb1,   h_cercomb1,   b_cercomb1,   b_cercomb1)
-  if  (bwselect=="cercomb2") results[1,] = c(h_cercomb2_l, h_cercomb2_r, b_cercomb2_l, b_cercomb2_r)
+  bws = matrix(NA,1,4)
+  colnames(bws)=c("h (left)","h (right)","b (left)","b (right)")
+  rownames(bws)=bwselect
+  if  (bwselect=="mserd" | bwselect=="") bws[1,] = c(h_mserd,      h_mserd,      b_mserd,      b_mserd)
+  if  (bwselect=="msetwo")               bws[1,] = c(h_msetwo_l,   h_msetwo_r,   b_msetwo_l,   b_msetwo_r)
+  if  (bwselect=="msesum")               bws[1,] = c(h_msesum,     h_msesum,     b_msesum,     b_msesum)
+  if  (bwselect=="msecomb1")             bws[1,] = c(h_msecomb1,   h_msecomb1,   b_msecomb1,   b_msecomb1)
+  if  (bwselect=="msecomb2")             bws[1,] = c(h_msecomb2_l, h_msecomb2_r, b_msecomb2_l, b_msecomb2_r) 
+  if  (bwselect=="cerrd")                bws[1,] = c(h_cerrd,      h_cerrd,      b_cerrd,      b_cerrd)
+  if  (bwselect=="certwo")               bws[1,] = c(h_certwo_l,   h_certwo_r,   b_certwo_l,   b_certwo_r)
+  if  (bwselect=="cersum")               bws[1,] = c(h_cersum,     h_cersum,     b_cersum,     b_cersum)
+  if  (bwselect=="cercomb1")             bws[1,] = c(h_cercomb1,   h_cercomb1,   b_cercomb1,   b_cercomb1)
+  if  (bwselect=="cercomb2")             bws[1,] = c(h_cercomb2_l, h_cercomb2_r, b_cercomb2_l, b_cercomb2_r)
 }
 
   if (all=="TRUE"){
     bwselect="All"
-    results = matrix(NA,10,4)
-    colnames(results)=c("h_l","h_r","b_l","b_r")
-    #rownames(results)=c("CCT","IK","CV")
-    rownames(results)=c("mserd","msetwo","msesum","msecomb1","msecomb2","cerrd","certwo","cersum","cercomb1","cercomb2") 
-    results[1,] =c(h_mserd,      h_mserd,      b_mserd,      b_mserd)
-    results[2,] =c(h_msetwo_l,   h_msetwo_r,   b_msetwo_l,   b_msetwo_r)
-    results[3,] =c(h_msesum,     h_msesum,     b_msesum,     b_msesum)
-    results[4,] =c(h_msecomb1,   h_msecomb1,   b_msecomb1,   b_msecomb1)
-    results[5,] =c(h_msecomb2_l, h_msecomb2_r, b_msecomb2_l, b_msecomb2_r) 
-    results[6,] =c(h_cerrd,      h_cerrd,      b_cerrd,      b_cerrd)
-    results[7,] =c(h_certwo_l,   h_certwo_r,   b_certwo_l,   b_certwo_r)
-    results[8,] =c(h_cersum,     h_cersum,     b_cersum,     b_cersum)
-    results[9,] =c(h_cercomb1,   h_cercomb1,   b_cercomb1,   b_cercomb1)
-    results[10,]=c(h_cercomb2_l, h_cercomb2_r, b_cercomb2_l, b_cercomb2_r)
+    bws = matrix(NA,10,4)
+    colnames(bws)=c("h (left)","h (right)","b (left)","b (right)")
+    rownames(bws)=c("mserd","msetwo","msesum","msecomb1","msecomb2","cerrd","certwo","cersum","cercomb1","cercomb2") 
+    bws[1,] =c(h_mserd,      h_mserd,      b_mserd,      b_mserd)
+    bws[2,] =c(h_msetwo_l,   h_msetwo_r,   b_msetwo_l,   b_msetwo_r)
+    bws[3,] =c(h_msesum,     h_msesum,     b_msesum,     b_msesum)
+    bws[4,] =c(h_msecomb1,   h_msecomb1,   b_msecomb1,   b_msecomb1)
+    bws[5,] =c(h_msecomb2_l, h_msecomb2_r, b_msecomb2_l, b_msecomb2_r) 
+    bws[6,] =c(h_cerrd,      h_cerrd,      b_cerrd,      b_cerrd)
+    bws[7,] =c(h_certwo_l,   h_certwo_r,   b_certwo_l,   b_certwo_r)
+    bws[8,] =c(h_cersum,     h_cersum,     b_cersum,     b_cersum)
+    bws[9,] =c(h_cercomb1,   h_cercomb1,   b_cercomb1,   b_cercomb1)
+    bws[10,]=c(h_cercomb2_l, h_cercomb2_r, b_cercomb2_l, b_cercomb2_r)
   }
   
   tabl1.str=matrix(NA,4,1)
@@ -374,8 +370,8 @@ if (all=="FALSE"){
   tabl2.str[2,]=formatC(c(p,p),digits=0, format="f")
   tabl2.str[3,]=formatC(c(q,q),digits=0, format="f")
 
-  bws=results
-  out = list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,bws=bws,bws,bwselect=bwselect,kernel=kernel_type,p=p,q=q)
+  out = list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,bws=bws,
+             bwselect=bwselect,kernel=kernel_type,p=p,q=q,N_l=N_l,N_r=N_r,c=c)
   out$call <- match.call()
   class(out) <- "rdbwselect"
   return(out)
