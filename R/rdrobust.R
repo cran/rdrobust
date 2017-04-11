@@ -503,7 +503,7 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
   }
 
   out=list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,tabl3.str=tabl3.str,
-           N=N, N_l=N_l, N_r=N_r, N_h_l=N_h_l, N_b_l=N_b_l, N_b_r=N_b_r,
+           N=N, N_l=N_l, N_r=N_r, N_h_l=N_h_l, N_h_r=N_h_r, N_b_l=N_b_l, N_b_r=N_b_r,
            c=c, p=p, q=q, h_l=bws[1,1],h_r=bws[1,2], b_l=bws[2,1],b_r=bws[2,2],
            tau_cl=tau_cl, tau_bc=tau_bc, se_tau_cl=se_tau_cl, se_tau_rb=se_tau_rb, bias_l=bias_l,bias_r=bias_r,
            beta_p_l=beta_p_l, beta_p_r=beta_p_r, 

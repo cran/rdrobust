@@ -30,7 +30,7 @@
   \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
   \item{bwselect}{selects the bandwidth selection procedure to be used. By default it computes both \code{h} and \code{b}, unless \code{rho} is specified, in which case it only computes \code{h} and sets \code{b} = \code{h/rho}. Options are:
   
-  \code{CCT} for bandwidth selector proposed by Calonico, Cattaneo and Titiunik (2014a)  (default option).
+  \code{CCT} for bandwidth selector proposed by Calonico, Cattaneo and Titiunik (2014)  (default option).
   
   \code{IK} for bandwidth selector proposed by Imbens and Kalyanaraman (2012) (only available for Sharp RD design).
   
@@ -50,7 +50,7 @@
   
 \item{all}{if specified, \code{\link{rdbwselect_2014}} reports  three different procedures: 
 
-  \code{CCT} for bandwidth selector proposed by Calonico, Cattaneo and Titiunik (2014a).
+  \code{CCT} for bandwidth selector proposed by Calonico, Cattaneo and Titiunik (2014).
   
   \code{IK} for bandwidth selector proposed by Imbens and Kalyanaraman (2012).
   
@@ -66,7 +66,7 @@
   \item{q}{order of the local-polynomial used to construct the bias-correction estimator.}
 }
 \references{
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014a. "Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs." \emph{Econometrica} 82(6): 2295-2326, November 2014.   \url{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}.
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}{Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs.} \emph{Econometrica} 82(6): 2295-2326, November 2014.   .
 }
 \author{
 Sebastian Calonico, University of Miami, Coral Gables, FL.  \email{scalonico@bus.miami.edu}.
