@@ -96,6 +96,11 @@ rdplot = function(y, x, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kern
   	exit = 1
 	}
 
+	if (nbins %% 1 != 0 | nbins <= 0 ) {
+	  print("nbins should be a positive integer")
+	  exit = 1
+	}
+
 	if (exit>0) stop()
 	
 	###################################################################
