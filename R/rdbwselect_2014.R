@@ -1,6 +1,6 @@
 ### version 0.1  18Nov2013
 ### version 0.2  26Nov2013
-### version 0.3  21Abr2014
+### version 0.3  21Abr2014 
 ### version 0.5  06Jun2014
 ### version 0.6  17Jun2014
 ### version 0.61 03Sep2014
@@ -418,16 +418,11 @@ rdbwselect_2014 = function(y, x, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NULL
       abline(v=h_CV)
     }
     
-    #if (b_calc==0) {
-    #  b_CV = h_CV/rho
-    #}
     results = matrix(NA,1,2)
     colnames(results)=c("h","b")
-    #rownames(results)=c("CV")
     results[1,]=c(h_CV,h_CV/rho)
   }
-  #results=list(CCT=c(h_CCT,b_CCT),IK=c(h_IK,b_IK),CV=h_CV)
-  
+
   if (all=="TRUE"){
   bwselect="All"
   results = matrix(NA,3,2)
@@ -461,15 +456,6 @@ rdbwselect_2014 = function(y, x, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NULL
 }
 
 
-#rdbwselect <- function(y,x, ...) UseMethod("rdbwselect")
-
-#rdbwselect.default <- function(y,x, ...){
-#  est <- rdbwselectEst(y,x, ...)
-#  est$call <- match.call()
-#  class(est) <- "rdbwselect"
-#  est
-#}
-
 print.rdbwselect_2014 <- function(x,...){
   cat("Call:\n")
   print(x$call)
@@ -487,9 +473,3 @@ summary.rdbwselect_2014 <- function(object,...) {
   res
 }
 
-#print.summary.rdbwselect_2014 <- function(x, ...){
-#  cat("Call:\n")
-#  print(x$call)
-#  cat("\n")
-#  printCoefmat(x$coefficients, P.values=FALSE, has.Pvalue=FALSE)
-#}

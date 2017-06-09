@@ -1,6 +1,6 @@
 \name{rdbwselect}
 \alias{rdbwselect}
-\alias{print.rdbwselect}
+\alias{print.rdbwselect} 
 \alias{summary.rdbwselect}
 \title{Bandwidth Selection Procedures for Local Polynomial Regression Discontinuity Estimators}
 \description{
@@ -13,10 +13,10 @@ A detailed introduction to this command is given in Calonico, Cattaneo and Titiu
    
 For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://sites.google.com/site/rdpackages/}
 }
-\usage{rdbwselect(y, x, c = 0,  fuzzy = NULL, deriv = 0, p = NULL, q = NULL, covs = NULL,  
+\usage{rdbwselect(y, x, c = NULL,  fuzzy = NULL, deriv = NULL, p = NULL, q = NULL, covs = NULL,  
               kernel = "tri", weights = NULL, bwselect = "mserd", 
               vce = "nn",  cluster = NULL, nnmatch = 3, 
-              scaleregul = 1, sharpbw = FALSE, all = FALSE, subset = NULL)}
+              scaleregul = 1, sharpbw = FALSE, all = NULL, subset = NULL)}
 \arguments{
   \item{y}{is the dependent variable.}
   \item{x}{is the running variable (a.k.a. score or forcing variable).}
@@ -75,15 +75,13 @@ Default is \code{vce=nn}.}
   \item{subset}{an optional vector specifying a subset of observations to be used.}
 }
 \value{
-  \item{N_l}{sample size used to the left of the cutoff.}
-  \item{N_r}{sample size used to the right of the cutoff.}
+  \item{N}{vector with sample sizes to the left and to the righst of the cutoff.}
   \item{c}{cutoff value.}
   \item{p}{order of the local-polynomial used to construct the point-estimator.}
   \item{q}{order of the local-polynomial used to construct the bias-correction estimator.}
   \item{bws}{matrix containing the estimated bandwidths for each selected procedure.}
   \item{bwselect}{bandwidth selection procedure employed.}
   \item{kernel}{kernel function used to construct the local-polynomial estimator(s).}
-
 }
 \references{
 

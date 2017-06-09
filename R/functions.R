@@ -1,15 +1,4 @@
-### version 0.1  18Nov2013
-### version 0.2  26Nov2013
-### version 0.3  21Abr2014
-### version 0.5  06Jun2014
-### version 0.6  17Jun2014
-### version 0.61 03Sep2014
-### version 0.7  14Oct2014
-### version 0.8  04Feb2015
-### version 0.9  28Mar2016
-### version 0.92 08Aug2016
-### version 0.95 12Dec2016
-### version 0.96 01Mar2017
+### version 0.98 09Jun2017 
 
 qrXXinv = function(x, ...) {
   #tcrossprod(solve(qr.R(qr(x, tol = 1e-10)), tol = 1e-10))
@@ -44,7 +33,6 @@ rdrobust_kweight = function(X, c,  h,  kernel){
   }
   return(w)	
 }
-
 
 rdrobust_res = function(X, y, T, Z, m, hii, vce, matches, dups, dupsid, d) {
   n = length(y)

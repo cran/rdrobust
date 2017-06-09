@@ -1,5 +1,5 @@
 \name{rdrobust}
-\alias{rdrobust}
+\alias{rdrobust} 
 \alias{print.rdrobust}
 \alias{summary.rdrobust}
 \title{Local-Polynomial RD Estimation with Robust Confidence Intervals}
@@ -14,11 +14,11 @@ A detailed introduction to this command is given in Calonico, Cattaneo and Titiu
 For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://sites.google.com/site/rdpackages/}
 
 }
-\usage{rdrobust(y, x, c = 0,  fuzzy = NULL, deriv = 0, p = NULL, q = NULL, 
+\usage{rdrobust(y, x, c = NULL,  fuzzy = NULL, deriv = NULL, p = NULL, q = NULL, 
                 h = NULL, b = NULL, rho = NULL, covs = NULL,  kernel = "tri", 
                 weights = NULL, bwselect = "mserd", vce = "nn", cluster = NULL, 
                 nnmatch = 3, level = 95, scalepar = 1, scaleregul = 1, 
-                sharpbw = FALSE, all = FALSE, subset = NULL)}
+                sharpbw = FALSE, all = NULL, subset = NULL)}
 \arguments{
   \item{y}{is the dependent variable.}
   \item{x}{is the running variable (a.k.a. score or forcing variable).}
@@ -91,37 +91,24 @@ Default is \code{vce=nn}.}
   \item{subset}{an optional vector specifying a subset of observations to be used.}
 }
 \value{
-  \item{N}{overall sample size.}
-  \item{N_l}{sample size used to the left of the cutoff.}
-  \item{N_r}{sample size used to the right of the cutoff.}
-  \item{N_h_l}{effective number of observations (given by the bandwidth h_l) used to the left of the cutoff.}
-  \item{N_h_r}{effective number of observations (given by the bandwidth h_r) used to the right of the cutoff.}
-  \item{N_b_l}{effective number of observations (given by the bandwidth b_l) used to the left of the cutoff.}
-  \item{N_b_r}{effective number of observations (given by the bandwidth b_r) used to the right of the cutoff.}
+  \item{N}{vector with the sample sizes used to the left and to the right of the cutoff.}
+  \item{N_h}{vector with the effective sample sizes used to the left and to the right of the cutoff.}
   \item{c}{cutoff value.}
   \item{p}{order of the polynomial used for estimation of the regression function.}
   \item{q}{order of the polynomial used for estimation of the bias of the regression function.}
-  \item{h_l}{bandwidth used for estimation of the regression function below the cutoff.}
-  \item{h_r}{bandwidth used for estimation of the regression function above the cutoff.}
-  \item{b_l}{bandwidth used for estimation of the bias of the regression function estimator below the cutoff.}
-  \item{b_r}{bandwidth used for estimation of the bias of the regression function estimator above the cutoff.}
+  \item{bws}{matrix containing the bandwidths used.}
   \item{tau_cl}{conventional local-polynomial RD estimate.}
   \item{tau_bc}{bias-corrected local-polynomial RD estimate.}
   \item{se_tau_cl}{conventional standard error of the local-polynomial RD estimator.}
   \item{se_tau_rb}{robust standard error of the local-polynomial RD estimator.}
-  \item{bias_l}{estimated bias for the local-polynomial RD estimator below the cutoff.}
-  \item{bias_r}{estimated bias for the local-polynomial RD estimator above the cutoff.}
-  \item{beta_p_r}{conventional p-order local-polynomial estimates to the right of the cutoff.}
-  \item{beta_p_l}{conventional p-order local-polynomial estimates to the left of the cutoff.}
-  \item{V_cl_r}{conventional variance-covariance matrix to the right of the cutoff.}
-  \item{V_cl_l}{conventional variance-covariance matrix to the left of the cutoff.}
-  \item{V_rb_r}{robust variance-covariance matrix to the right of the cutoff.}
-  \item{V_rb_l}{robust variance-covariance matrix to the left of the cutoff.}
+  \item{bias}{estimated bias for the local-polynomial RD estimator below and above the cutoff.}
+  \item{beta_p}{conventional p-order local-polynomial estimates to the left and to the right of the cutoff.}
+  \item{V_cl}{conventional variance-covariance matrix estimated below and above the cutoff.}
+  \item{V_rb}{robust variance-covariance matrix estimated below and above the cutoff.}
   \item{coef}{vector containing conventional and bias-corrected local-polynomial RD estimates.}
   \item{se}{vector containing conventional and robust standard errors of the local-polynomial RD estimates.}
   \item{pv}{vector containing the p-values associated with conventional, bias-corrected and robust local-polynomial RD estimates.}
   \item{ci}{matrix containing the confidence intervals associated with conventional, bias-corrected and robust local-polynomial RD estimates.}
-  \item{bws}{matrix containing the estimated bandwidths on each side of the cutoff.}
 }
 \references{
 Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2017. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell_2017_JASA.pdf}{On the Effect of Bias Estimation on Coverage Accuracy in Nonparametric Inference.} \emph{Journal of the American Statistical Association}, forthcoming.

@@ -16,7 +16,7 @@ For more details, and related Stata and R packages useful for analysis of RD des
 \usage{
 rdplot(y, x, c = 0, p = 4, nbins = NULL, binselect = "esmv",  
           scale = NULL, kernel = "uni", weights = NULL, h = NULL, 
-          support = NULL, subset = NULL, hide = FALSE, ci = NULL, 
+          covs = NULL, support = NULL, subset = NULL, hide = FALSE, ci = NULL, 
           shade = FALSE, par = NULL, title = NULL, 
           x.label = NULL, y.label = NULL, x.lim = NULL, y.lim = NULL, 
           col.dots = NULL, col.lines = NULL, type.dots = NULL,...)
@@ -50,6 +50,7 @@ rdplot(y, x, c = 0, p = 4, nbins = NULL, binselect = "esmv",
   \item{weights}{is the variable used for optional weighting of the estimation procedure. The unit-specific weights multiply the kernel function.}
 \item{h}{specifies the bandwidth used to construct the (global) polynomial fits given the kernel choice \code{kernel}.
 If not specified, the bandwidths are chosen to span the full support of the data. If two bandwidths are specified, the first bandwidth is used for the data below the cutoff and the second bandwidth is used for the data above the cutoff.}
+  \item{covs}{specifies additional covariates to be used in the polynomial regression.}
   \item{support}{specifies an optional extended support of the running variable to be used in the construction of the bins;  default is the sample range.}
   \item{subset}{an optional vector specifying a subset of observations to be used.}
   \item{hide}{logical. If \code{TRUE}, it omits the RD plot; default is \code{hide = FALSE}.}
@@ -73,7 +74,6 @@ If not specified, the bandwidths are chosen to span the full support of the data
   \item{c}{cutoff value.}
   \item{J_star_l}{selected number of bins to the left of the cutoff.}
   \item{J_star_r}{selected number of bins to the right of the cutoff.}
-  %\item{results}{matrix containing the main estimation results (sample size, polynomial order, number of bins, scales and bin lengths).}
   \item{coef}{matrix containing the coefficients of the \eqn{p^{th}} order global polynomial estimated both sides of the cutoff.}
   \item{genvars}{data frame containing the variables used to construct the bins: bin id, cutoff values, mean of x and y within each bin, cutoff points and confidence interval bounds.}
 }

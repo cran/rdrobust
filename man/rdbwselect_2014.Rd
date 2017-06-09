@@ -1,7 +1,7 @@
 \name{rdbwselect_2014}
 \alias{rdbwselect_2014}
 \alias{print.rdbwselect_2014}
-\alias{summary.rdbwselect_2014}
+\alias{summary.rdbwselect_2014} 
 \title{Deprecated Bandwidth Selection Procedures for Local-Polynomial Regression-Discontinuity Estimators.}
 \description{\code{\link{rdbwselect_2014}} is a deprecated command implementing three bandwidth selectors for local polynomial Regression Discontinuity (RD) point estimators and inference procedures, as described in Calonico, Cattaneo and Titiunik (2014).
 

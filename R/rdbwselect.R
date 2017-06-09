@@ -1,28 +1,47 @@
-### version 0.1  18Nov2013
-### version 0.2  26Nov2013
-### version 0.3  21Abr2014
-### version 0.5  06Jun2014
-### version 0.6  17Jun2014
-### version 0.61 03Sep2014
-### version 0.7  14Oct2014
-### version 0.8  04Feb2015
-### version 0.9  28Mar2016
-### version 0.92 08Aug2016
-### version 0.95 12Dec2016
-### version 0.96 07Mar2017
+### version 0.98 09Jun2017 
 
-rdbwselect = function(y, x, c=0, fuzzy = NULL, deriv=0, p=NULL, q=NULL, covs = NULL,  
+rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, covs = NULL,  
                       kernel="tri", weights=NULL, bwselect="mserd",  
                       vce="nn", cluster = NULL,  nnmatch=3,  scaleregul=1, 
-                      sharpbw=FALSE,  all=FALSE, subset = NULL){
+                      sharpbw=FALSE,  all=NULL, subset = NULL){
   
   if (!is.null(subset)) {
     x <- x[subset]
     y <- y[subset]
   }
   
-  if (is.null(p)) p=1
-  if (!is.null(p) & is.null(q)) q=p+1
+  if (is.null(all)) all<-FALSE
+  if (is.null(c)) c <- 0
+    
+  # p
+  if (length(p) == 0) {
+    flag_no_p <- TRUE
+    p <- 1
+  } else if ((length(p) != 1) | !(p[1]%in%0:20)) {
+    stop("Polynomial order p incorrectly specified.\n")
+  } else {
+    flag_no_p <- FALSE
+  }
+  
+  # q
+  if (length(q) == 0) {
+    flag_no_q <- TRUE
+    q <- p + 1
+  } else if ((length(q) > 1) | !(q[1]%in%c(0:20)) | (q[1]<p)) {
+    stop("Polynomial order (for bias correction) q incorrectly specified.\n")
+  } else {
+    flag_no_q <- FALSE
+  }
+  
+  # deriv
+  if (length(deriv) == 0) {
+    flag_no_deriv <- TRUE
+    deriv <- 0
+  } else if ((length(deriv) > 1) | !(deriv[1]%in%c(0:20)) | (deriv[1]>p)) {
+    stop("Derivative order incorrectly specified.\n")
+  } else {
+    flag_no_deriv <- FALSE
+  }
   
   na.ok <- complete.cases(x) & complete.cases(y)
   
@@ -41,11 +60,18 @@ rdbwselect = function(y, x, c=0, fuzzy = NULL, deriv=0, p=NULL, q=NULL, covs = N
     na.ok <- na.ok & complete.cases(fuzzy)
   } 
   
+  if (!is.null(weights)){
+    if (!is.null(subset)) weights <- weights[subset]
+    na.ok <- na.ok & complete.cases(weights)
+  } 
+  
   x = as.matrix(x[na.ok])
   y = as.matrix(y[na.ok])
   if (!is.null(covs))    covs    = as.matrix(covs)[na.ok, , drop = FALSE]
   if (!is.null(fuzzy))   fuzzy   = as.matrix(fuzzy[na.ok])
   if (!is.null(cluster)) cluster = as.matrix(cluster[na.ok])
+  if (!is.null(weights)) weights = as.matrix(weights[na.ok])
+  
   
   if (vce=="nn") {
     order_x = order(x)
@@ -54,6 +80,7 @@ rdbwselect = function(y, x, c=0, fuzzy = NULL, deriv=0, p=NULL, q=NULL, covs = N
     if (!is.null(covs))    covs    =  as.matrix(covs)[order_x,,drop=FALSE]
     if (!is.null(fuzzy))   fuzzy   =   fuzzy[order_x,,drop=FALSE]
     if (!is.null(cluster)) cluster = cluster[order_x,,drop=FALSE]
+    if (!is.null(weights)) weights = weights[order_x,,drop=FALSE]
   }
   
   ### reescaling
@@ -80,12 +107,7 @@ rdbwselect = function(y, x, c=0, fuzzy = NULL, deriv=0, p=NULL, q=NULL, covs = N
   N_l = length(X_l);   N_r = length(X_r)
   x_min=min(x);  x_max=max(x)
   N = N_r + N_l
-    
-  if (deriv>0 & p==deriv) {
-    p = deriv + 1
-    q = p+1
-  }
-  
+
     exit=0
     #################  ERRORS
     if (kernel!="uni" & kernel!="uniform" & kernel!="tri" & kernel!="triangular" & kernel!="epa" & kernel!="epanechnikov" & kernel!="" ){
@@ -149,6 +171,15 @@ rdbwselect = function(y, x, c=0, fuzzy = NULL, deriv=0, p=NULL, q=NULL, covs = N
     C_c=2.576
   }
   
+    vce_type = "NN"
+    if (vce=="hc0")     		vce_type = "HC0"
+    if (vce=="hc1")      	  vce_type = "HC1"
+    if (vce=="hc2")      	  vce_type = "HC2"
+    if (vce=="hc3")      	  vce_type = "HC3"
+    if (vce=="cluster")  	  vce_type = "Cluster"
+    if (vce=="nncluster") 	vce_type = "NNcluster"
+
+    
   #***********************************************************************
   dZ=Z_l=Z_r=T_l=T_r=C_l=C_r=Cind_l=Cind_r=g_l=g_r=NULL
 
@@ -211,16 +242,16 @@ rdbwselect = function(y, x, c=0, fuzzy = NULL, deriv=0, p=NULL, q=NULL, covs = N
  
     #*** TWO
     if  (bwselect=="msetwo" |  bwselect=="certwo" | bwselect=="msecomb2" | bwselect=="cercomb2"  | all=="TRUE")  {		
-      d_bw_l = (  C_d_l$V              /   C_d_l$B^2             )^C_d_l$rate
-      d_bw_r = (  C_d_r$V              /   C_d_r$B^2             )^C_d_l$rate
+      d_bw_l = c((  C_d_l$V              /   C_d_l$B^2             )^C_d_l$rate)
+      d_bw_r = c((  C_d_r$V              /   C_d_r$B^2             )^C_d_l$rate)
       C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_l, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
-      b_bw_l = (  C_b_l$V              /   (C_b_l$B^2 + scaleregul*C_b_l$R)        )^C_b_l$rate
+      b_bw_l = c((  C_b_l$V              /   (C_b_l$B^2 + scaleregul*C_b_l$R)        )^C_b_l$rate)
       C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_r, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
-      b_bw_r = (  C_b_r$V              /   (C_b_r$B^2 + scaleregul*C_b_r$R)        )^C_b_l$rate
+      b_bw_r = c((  C_b_r$V              /   (C_b_r$B^2 + scaleregul*C_b_r$R)        )^C_b_l$rate)
       C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_l, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
-      h_bw_l = (  C_h_l$V              /   (C_h_l$B^2 + scaleregul*C_h_l$R)         )^C_h_l$rate
+      h_bw_l = c((  C_h_l$V              /   (C_h_l$B^2 + scaleregul*C_h_l$R)         )^C_h_l$rate)
       C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_r, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
-      h_bw_r = (  C_h_r$V              /   (C_h_r$B^2 + scaleregul*C_h_r$R)         )^C_h_l$rate
+      h_bw_r = c((  C_h_r$V              /   (C_h_r$B^2 + scaleregul*C_h_r$R)         )^C_h_l$rate)
                   
       #if (C_b_l$V==0 | C_b_l$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) below the threshold. Range defined by bandwidth = %f\n", d_bw_l)  
       #if (C_b_r$V==0 | C_b_r$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) above the threshold. Range defined by bandwidth = %f\n", d_bw_r)  
@@ -230,13 +261,13 @@ rdbwselect = function(y, x, c=0, fuzzy = NULL, deriv=0, p=NULL, q=NULL, covs = N
   
 #  *** SUM
   if  (bwselect=="msesum" | bwselect=="cersum" |  bwselect=="msecomb1" | bwselect=="msecomb2" |  bwselect=="cercomb1" | bwselect=="cercomb2"  |  all=="TRUE")  {
-    d_bw_s = ( (C_d_l$V + C_d_r$V)  /  (C_d_r$B + C_d_l$B)^2 )^C_d_l$rate
+    d_bw_s = c(( (C_d_l$V + C_d_r$V)  /  (C_d_r$B + C_d_l$B)^2 )^C_d_l$rate)
     C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_s, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
     C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_s, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
-    b_bw_s = ( (C_b_l$V + C_b_r$V)  /  ((C_b_r$B + C_b_l$B)^2 + scaleregul*(C_b_r$R+C_b_l$R)) )^C_b_l$rate
+    b_bw_s = c(( (C_b_l$V + C_b_r$V)  /  ((C_b_r$B + C_b_l$B)^2 + scaleregul*(C_b_r$R+C_b_l$R)) )^C_b_l$rate)
     C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_s, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
     C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_s, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
-    h_bw_s = ( (C_h_l$V + C_h_r$V)  /  ((C_h_r$B + C_h_l$B)^2 + scaleregul*(C_h_r$R + C_h_l$R)) )^C_h_l$rate
+    h_bw_s = c(( (C_h_l$V + C_h_r$V)  /  ((C_h_r$B + C_h_l$B)^2 + scaleregul*(C_h_r$R + C_h_l$R)) )^C_h_l$rate)
 
     #if (C_b_l$V==0 | C_b_l$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) below the threshold. Range defined by bandwidth = %f\n", d_bw_s)  
     #if (C_b_r$V==0 | C_b_r$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) above the threshold. Range defined by bandwidth = %f\n", d_bw_s)  
@@ -246,13 +277,13 @@ rdbwselect = function(y, x, c=0, fuzzy = NULL, deriv=0, p=NULL, q=NULL, covs = N
 
     #                     *** RD
 if  (bwselect=="mserd" | bwselect=="cerrd" | bwselect=="msecomb1" | bwselect=="msecomb2" | bwselect=="cercomb1" | bwselect=="cercomb2" | bwselect=="" | all=="TRUE" ) {
-  d_bw_d = ( (C_d_l$V + C_d_r$V)  /  (C_d_r$B - C_d_l$B)^2 )^C_d_l$rate
+  d_bw_d = c(( (C_d_l$V + C_d_r$V)  /  (C_d_r$B - C_d_l$B)^2 )^C_d_l$rate)
   C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
   C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
-  b_bw_d = ( (C_b_l$V + C_b_r$V)  /  ((C_b_r$B - C_b_l$B)^2 + scaleregul*(C_b_r$R + C_b_l$R)) )^C_b_l$rate
+  b_bw_d = c(( (C_b_l$V + C_b_r$V)  /  ((C_b_r$B - C_b_l$B)^2 + scaleregul*(C_b_r$R + C_b_l$R)) )^C_b_l$rate)
   C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
   C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_d, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
-  h_bw_d = ( (C_h_l$V + C_h_r$V)  /  ((C_h_r$B - C_h_l$B)^2 + scaleregul*(C_h_r$R + C_h_l$R)) )^C_h_l$rate
+  h_bw_d = c(( (C_h_l$V + C_h_r$V)  /  ((C_h_r$B - C_h_l$B)^2 + scaleregul*(C_h_r$R + C_h_l$R)) )^C_h_l$rate)
     
   #if (C_b_l$V==0 | C_b_l$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) below the threshold. Range defined by bandwidth = %f\n", d_bw_d)  
   #if (C_b_r$V==0 | C_b_r$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) above the threshold. Range defined by bandwidth = %f\n", d_bw_d)  
@@ -324,6 +355,7 @@ cer_b = 1
 
 
 if (all=="FALSE"){
+  bw_list = bwselect
   bws = matrix(NA,1,4)
   colnames(bws)=c("h (left)","h (right)","b (left)","b (right)")
   rownames(bws)=bwselect
@@ -343,6 +375,7 @@ if (all=="FALSE"){
     bwselect="All"
     bws = matrix(NA,10,4)
     colnames(bws)=c("h (left)","h (right)","b (left)","b (right)")
+    bw_list=c("mserd","msetwo","msesum","msecomb1","msecomb2","cerrd","certwo","cersum","cercomb1","cercomb2") 
     rownames(bws)=c("mserd","msetwo","msesum","msecomb1","msecomb2","cerrd","certwo","cersum","cercomb1","cercomb2") 
     bws[1,] =c(h_mserd,      h_mserd,      b_mserd,      b_mserd)
     bws[2,] =c(h_msetwo_l,   h_msetwo_r,   b_msetwo_l,   b_msetwo_r)
@@ -356,57 +389,63 @@ if (all=="FALSE"){
     bws[10,]=c(h_cercomb2_l, h_cercomb2_r, b_cercomb2_l, b_cercomb2_r)
   }
   
-  tabl1.str=matrix(NA,4,1)
-  dimnames(tabl1.str) <-list(c("BW Selector", "Number of Obs", "NN Matches", "Kernel Type"), rep("", dim(tabl1.str)[2]))
-  tabl1.str[1,1]=bwselect
-  tabl1.str[2,1]=N
-  tabl1.str[3,1]=nnmatch
-  tabl1.str[4,1]=kernel_type
-  
-  tabl2.str=matrix(NA,3,2)
-  colnames(tabl2.str)=c("Left","Right")
-  rownames(tabl2.str)=c("Number of Obs","Order Loc Poly (p)","Order Bias (q)")
-  tabl2.str[1,]=formatC(c(N_l,N_r),digits=0, format="f")
-  tabl2.str[2,]=formatC(c(p,p),digits=0, format="f")
-  tabl2.str[3,]=formatC(c(q,q),digits=0, format="f")
 
-  out = list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,bws=bws,
-             bwselect=bwselect,kernel=kernel_type,p=p,q=q,N_l=N_l,N_r=N_r,c=c)
+  out = list(bws=bws, 
+             bwselect=bwselect, bw_list=bw_list, kernel=kernel_type, p=p, q=q, c=c, N=c(N_l,N_r), vce=vce_type)
   out$call <- match.call()
   class(out) <- "rdbwselect"
   return(out)
 }
 
-
-#rdbwselect <- function(y,x, ...) UseMethod("rdbwselect")
-
-#rdbwselect.default <- function(y,x, ...){
-#  est <- rdbwselectEst(y,x, ...)
-#  est$call <- match.call()
-#  class(est) <- "rdbwselect"
-#  est
-#}
-
 print.rdbwselect <- function(x,...){
-  cat("Call:\n")
-  print(x$call)
-  print(x$tabl1.str,quote=F)  
+  cat("Call: rdbwselect\n\n")
+  cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
+  cat(paste("BW type                  ",  format(x$bwselect, width=10, justify="right"),"\n", sep=""))
+  cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
+  cat(paste("VCE method               ",  format(x$vce,      width=10, justify="right"),"\n", sep=""))
   cat("\n")
-  print(x$tabl2.str,quote=F) 
+  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("Order bias  (p)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
   cat("\n")
-  print(x$bws)  
 }
 
 summary.rdbwselect <- function(object,...) {
-  TAB <- object$bws
-  res <- list(call=object$call, coefficients=TAB)
-  class(res) <- "summary.rdbwselect"
-  res
+  x    <- object
+  args <- list(...)
+  
+  cat("Call: rdbwselect\n\n")
+  
+  cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
+  cat(paste("BW type                  ",  format(x$bwselect, width=10, justify="right"),"\n", sep=""))
+  cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
+  cat(paste("VCE method               ",  format(x$vce,      width=10, justify="right"),"\n", sep=""))
+  cat("\n")
+  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("Order bias  (p)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
+  cat("\n")
+  
+  
+    col1.names = c("","BW est. (h)", "BW bias (b)")
+    col2.names = c("","Left of c", "Right of c","Left of c", "Right of c")
+
+  ### print output
+  cat(paste(rep("=", 15 + 10*4), collapse="")); cat("\n")
+
+    cat(format(col1.names  , width=14, justify="right"))
+    cat("\n")
+    cat(format(col2.names            , width=10, justify="right"))
+    cat("\n")
+    
+  cat(paste(rep("=", 15 + 10*4), collapse="")); cat("\n")
+  
+    for (j in 1:nrow(x$bws)) {
+      #cat(format(toString(j), width=4))
+      cat(format(x$bw_list[j]           , width=10, justify="right"))
+      cat(format(sprintf("%3.3f", x$bws[j,]), width=10, justify="right"))
+      cat("\n")
+    }
+    cat(paste(rep("=", 15 + 10*ncol(x$bws)), collapse="")); cat("\n")   
 }
 
-#print.summary.rdbwselect <- function(x, ...){
-#  cat("Call:\n")
-#  print(x$call)
-#  cat("\n")
-#  printCoefmat(x$coefficients, P.values=FALSE, has.Pvalue=FALSE)
-#}

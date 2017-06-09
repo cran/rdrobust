@@ -1,27 +1,46 @@
-### version 0.1  18Nov2013
-### version 0.2  26Nov2013
-### version 0.3  21Abr2014
-### version 0.5  06Jun2014
-### version 0.6  17Jun2014
-### version 0.61 03Sep2014
-### version 0.7  14Oct2014
-### version 0.8  04Feb2015
-### version 0.9  28Mar2016
-### version 0.92 08Aug2016
-### version 0.95 12Dec2016
-### version 0.96 07Mar2017
+### version 0.98 09Jun2017 
 
-rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b=NULL, rho=NULL, covs = NULL, 
+rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=NULL, b=NULL, rho=NULL, covs=NULL, 
                     kernel="tri", weights=NULL, bwselect="mserd", 
-                    vce="nn", cluster=NULL, nnmatch=3, level=95, scalepar=1, scaleregul=1, sharpbw=FALSE, all=FALSE, subset = NULL) {
+                    vce="nn", cluster=NULL, nnmatch=3, level=95, scalepar=1, scaleregul=1, sharpbw=FALSE, 
+                    all=NULL, subset = NULL) {
   
   if (!is.null(subset)) {
     x <- x[subset]
     y <- y[subset]
   }
   
-  if (is.null(p)) p=1
-  if (!is.null(p) & is.null(q)) q=p+1
+  if (is.null(c)) c <- 0
+  
+  # p
+  if (length(p) == 0) {
+    flag_no_p <- TRUE
+    p <- 1
+  } else if ((length(p) != 1) | !(p[1]%in%0:20)) {
+    stop("Polynomial order p incorrectly specified.\n")
+  } else {
+    flag_no_p <- FALSE
+  }
+  
+  # q
+  if (length(q) == 0) {
+    flag_no_q <- TRUE
+    q <- p + 1
+  } else if ((length(q) > 1) | !(q[1]%in%c(0:20)) | (q[1]<p)) {
+    stop("Polynomial order (for bias correction) q incorrectly specified.\n")
+  } else {
+    flag_no_q <- FALSE
+  }
+  
+  # deriv
+  if (length(deriv) == 0) {
+    flag_no_deriv <- TRUE
+    deriv <- 0
+  } else if ((length(deriv) > 1) | !(deriv[1]%in%c(0:20)) | (deriv[1]>p)) {
+    stop("Derivative order incorrectly specified.\n")
+  } else {
+    flag_no_deriv <- FALSE
+  }
   
   na.ok <- complete.cases(x) & complete.cases(y)
   
@@ -40,12 +59,18 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
     na.ok <- na.ok & complete.cases(fuzzy)
   } 
 
+  if (!is.null(weights)){
+    if (!is.null(subset)) weights <- weights[subset]
+    na.ok <- na.ok & complete.cases(weights)
+  } 
+  
   x = as.matrix(x[na.ok])
   y = as.matrix(y[na.ok])
   
   if (!is.null(covs))    covs    = as.matrix(covs)[na.ok, , drop = FALSE]
   if (!is.null(fuzzy))   fuzzy   = as.matrix(  fuzzy[na.ok])
   if (!is.null(cluster)) cluster = as.matrix(cluster[na.ok])
+  if (!is.null(weights)) weights = as.matrix(weights[na.ok])
   
   if (vce=="nn") {
     order_x = order(x)
@@ -54,25 +79,21 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
     if (!is.null(covs))    covs    =  as.matrix(covs)[order_x,,drop=FALSE]
     if (!is.null(fuzzy))   fuzzy   =   fuzzy[order_x,,drop=FALSE]
     if (!is.null(cluster)) cluster = cluster[order_x,,drop=FALSE]
+    if (!is.null(weights)) weights = weights[order_x,,drop=FALSE]
   }
 
-  kernel = tolower(kernel)
-  #bwselect = toupper(bwselect)
-  vce = tolower(vce)
+  kernel   = tolower(kernel)
+  bwselect = tolower(bwselect)
+  vce      = tolower(vce)
   
   X_l=x[x<c,,drop=FALSE];  X_r=x[x>=c,,drop=FALSE]
   Y_l=y[x<c,,drop=FALSE];  Y_r=y[x>=c,,drop=FALSE]
   x_min = min(x);  x_max = max(x)
-  N_l = length(X_l);   N_r = length(X_r)
   range_l = abs(max(X_l)-min(X_l));   range_r = abs(max(X_r)-min(X_r))
+  N_l = length(X_l);   N_r = length(X_r)
   N = N_r + N_l
   quant = -qnorm(abs((1-(level/100))/2))
   
-  if (deriv>0 & p<=deriv) {
-   p = deriv + 1
-   q = p+1
-  }
-
   vce_type = "NN"
   if (vce=="hc0")         vce_type = "HC0"
   if (vce=="hc1")         vce_type = "HC1"
@@ -82,17 +103,17 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
   
   #####################################################   CHECK ERRORS
   exit=0
-    if (kernel!="uni" & kernel!="uniform" & kernel!="tri" & kernel!="triangular" & kernel!="epa" & kernel!="epanechnikov" & kernel!="" ){
-      print("kernel incorrectly specified")
-      exit = 1
-    }
-    
+  if (kernel!="uni" & kernel!="uniform" & kernel!="tri" & kernel!="triangular" & kernel!="epa" & kernel!="epanechnikov" & kernel!="" ){
+    print("kernel incorrectly specified")
+    exit = 1
+  }
+  
   if  (bwselect!="mserd" & bwselect!="msetwo" & bwselect!="msesum" & bwselect!="msecomb1" & bwselect!="msecomb2" & bwselect!="cerrd" & bwselect!="certwo" & bwselect!="cersum" & bwselect!="cercomb1" & bwselect!="cercomb2" & bwselect!=""){
     print("bwselect incorrectly specified")  
     exit = 1
   }
   
-  if (bwselect=="CCT" | bwselect=="IK" | bwselect=="CV" | bwselect=="cct" | bwselect=="ik" | bwselect=="cv"){
+  if (bwselect=="cct" | bwselect=="ik" | bwselect=="cv"){
     print("bwselect options IK, CCT and CV have been depricated. Please see help for new options")  
     exit = 1
   }
@@ -107,29 +128,6 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
       exit = 1
     }
     
-    if (p<0 | q<0 | deriv<0 | nnmatch<=0 ){
-      print("p,q,deriv and matches should be positive integers")
-      exit = 1
-    }
-    
-    if (p>=q){
-      print("q should be set higher than p")
-      exit = 1
-    }
-    
-    if (deriv>p & deriv>0 ){
-      print("deriv can only be equal or lower p")
-      exit = 1
-    }
-    
-    p_round = round(p)/p;  q_round = round(q)/q;  d_round = round(deriv+1)/(deriv+1);  m_round = round(nnmatch)/nnmatch
-    
-    if ((p_round!=1 &p>0) | (q_round!=1&q>0) | d_round!=1 | m_round!=1 ){
-      print("p,q,deriv and matches should be integer numbers")
-      exit = 1
-    }
-    
-
     if (level>100 | level<=0){
       print("level should be set between 0 and 100")
       exit = 1
@@ -158,15 +156,21 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
     kernel_type = "Triangular"
   }
 
+  vce_type = "NN"
+  if (vce=="hc0")     		vce_type = "HC0"
+  if (vce=="hc1")      	  vce_type = "HC1"
+  if (vce=="hc2")      	  vce_type = "HC2"
+  if (vce=="hc3")      	  vce_type = "HC3"
+  if (vce=="cluster")  	  vce_type = "Cluster"
+  if (vce=="nncluster") 	vce_type = "NNcluster"
+  
     ############################################################################################
     #print("Preparing data.") 
     
     if (is.null(h)) {
       rdbws=rdbwselect(y=y, x=x,  covs=covs, cluster=cluster, fuzzy=fuzzy, c=c, deriv=deriv, p=p, q=q, vce=vce, bwselect=bwselect, kernel=kernel, weights=weights, scaleregul=scaleregul, sharpbw=sharpbw)
-      h_l = rdbws$bws[1]
-      h_r = rdbws$bws[2]
-      b_l = rdbws$bws[3]
-      b_r = rdbws$bws[4]
+      h_l = c(rdbws$bws[1]); b_l = c(rdbws$bws[3])
+      h_r = c(rdbws$bws[2]); b_r = c(rdbws$bws[4])
       
       if (!is.null(rho)) {
         b_l = h_l/rho
@@ -191,19 +195,20 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
       }  
     }
 
-  w_h_l = rdrobust_kweight(X_l,c,h_l,kernel);	w_h_r = rdrobust_kweight(X_r,c,h_r,kernel)
-  w_b_l = rdrobust_kweight(X_l,c,b_l,kernel);	w_b_r = rdrobust_kweight(X_r,c,b_r,kernel)
+  w_h_l <- rdrobust_kweight(X_l,c,h_l,kernel);	w_h_r <- rdrobust_kweight(X_r,c,h_r,kernel)
+  w_b_l <- rdrobust_kweight(X_l,c,b_l,kernel);	w_b_r <- rdrobust_kweight(X_r,c,b_r,kernel)
   
   if (!is.null(weights)) {
-    fw_l=weights[x<c];  fw_r=weights[x>=c]
-    w_h_l = fw_l*w_h_l;	w_h_r = fw_r*w_h_r
-    w_b_l = fw_l*w_b_l;	w_b_r = fw_r*w_b_r			
+    fw_l <- weights[x<c,, drop=FALSE]  
+    fw_r <- weights[x>=c,,drop=FALSE]
+    w_h_l <- fw_l*w_h_l;	w_h_r <- fw_r*w_h_r
+    w_b_l <- fw_l*w_b_l;	w_b_r <- fw_r*w_b_r			
   }
 
-  ind_h_l = w_h_l> 0;		ind_h_r = w_h_r> 0
-  ind_b_l = w_b_l> 0;		ind_b_r = w_b_r> 0
-  N_h_l = sum(ind_h_l); N_b_l = sum(ind_b_l)
-  N_h_r = sum(ind_h_r); N_b_r = sum(ind_b_r)
+  ind_h_l <- w_h_l> 0;		ind_h_r <- w_h_r> 0
+  ind_b_l <- w_b_l> 0;		ind_b_r <- w_b_r> 0
+  N_h_l <- sum(ind_h_l); N_b_l <- sum(ind_b_l)
+  N_h_r <- sum(ind_h_r); N_b_r <- sum(ind_b_r)
   
   #if (N_h_l<5 | N_h_r<5 | N_b_l<5 | N_b_r<5){
   #  stop("Not enough observations to perform calculations")
@@ -220,17 +225,12 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
   W_h_l = w_h_l[ind_l];	W_h_r = w_h_r[ind_r]
   W_b_l = w_b_l[ind_l];	W_b_r = w_b_r[ind_r]
   
-
   edups_l = edupsid_l = matrix(0,eN_l,1)
   edups_r = edupsid_r = matrix(0,eN_r,1)
  
   if (vce=="nn") {
-    for (i in 1:eN_l) {
-      edups_l[i]=sum(eX_l==eX_l[i])
-    }
-    for (i in 1:eN_r) {
-      edups_r[i]=sum(eX_r==eX_r[i])
-    }
+    for (i in 1:eN_l) edups_l[i]=sum(eX_l==eX_l[i])
+    for (i in 1:eN_r) edups_r[i]=sum(eX_r==eX_r[i])
     i=1
     while (i<=eN_l) {
       edupsid_l[i:(i+edups_l[i]-1)] = 1:edups_l[i]
@@ -243,7 +243,7 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
     }
   }          
           
-  u_l = (eX_l-c)/h_l;	u_r = (eX_r-c)/h_r
+  u_l <- (eX_l-c)/h_l;	u_r <-(eX_r-c)/h_r
   R_q_l = matrix(NA,eN_l,(q+1)); R_q_r = matrix(NA,eN_r,(q+1))
   for (j in 1:(q+1))  {
     R_q_l[,j] = (eX_l-c)^(j-1);  R_q_r[,j] = (eX_r-c)^(j-1)
@@ -387,13 +387,9 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
     predicts_q_r=R_q_r%*%beta_q_r
     if (vce=="hc2" | vce=="hc3") {
       hii_l=matrix(NA,eN_l,1)	
-      for (i in 1:eN_l) {
-        hii_l[i] = R_p_l[i,]%*%invG_p_l%*%(R_p_l*W_h_l)[i,]
-      }
+      for (i in 1:eN_l) hii_l[i] = R_p_l[i,]%*%invG_p_l%*%(R_p_l*W_h_l)[i,]
       hii_r=matrix(NA,eN_r,1)	
-      for (i in 1:eN_r) {  
-        hii_r[i] = R_p_r[i,]%*%invG_p_r%*%(R_p_r*W_h_r)[i,]
-      }
+      for (i in 1:eN_r) hii_r[i] = R_p_r[i,]%*%invG_p_r%*%(R_p_r*W_h_r)[i,]
     }
   }
   						
@@ -408,19 +404,19 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
 			                       
 	V_Y_cl_l = invG_p_l%*%rdrobust_vce(dT+dZ, s_Y, R_p_l*W_h_l, res_h_l, eC_l)%*%invG_p_l
 	V_Y_cl_r = invG_p_r%*%rdrobust_vce(dT+dZ, s_Y, R_p_r*W_h_r, res_h_r, eC_r)%*%invG_p_r
-	V_Y_bc_l = invG_p_l%*%rdrobust_vce(dT+dZ, s_Y, Q_q_l,       res_b_l, eC_l)%*%invG_p_l
-	V_Y_bc_r = invG_p_r%*%rdrobust_vce(dT+dZ, s_Y, Q_q_r,       res_b_r, eC_r)%*%invG_p_r
+	V_Y_rb_l = invG_p_l%*%rdrobust_vce(dT+dZ, s_Y, Q_q_l,       res_b_l, eC_l)%*%invG_p_l
+	V_Y_rb_r = invG_p_r%*%rdrobust_vce(dT+dZ, s_Y, Q_q_r,       res_b_r, eC_r)%*%invG_p_r
 	V_tau_cl = factorial(deriv)^2*(V_Y_cl_l+V_Y_cl_r)[deriv+1,deriv+1]
-	V_tau_rb = factorial(deriv)^2*(V_Y_bc_l+V_Y_bc_r)[deriv+1,deriv+1]
+	V_tau_rb = factorial(deriv)^2*(V_Y_rb_l+V_Y_rb_r)[deriv+1,deriv+1]
 	se_tau_cl = scalepar*sqrt(V_tau_cl);	se_tau_rb = scalepar*sqrt(V_tau_rb)
 
 	if (!is.null(fuzzy)) {
 		V_T_cl_l = invG_p_l%*%rdrobust_vce(dT+dZ, sV_T, R_p_l*W_h_l, res_h_l, eC_l)%*%invG_p_l
 		V_T_cl_r = invG_p_r%*%rdrobust_vce(dT+dZ, sV_T, R_p_r*W_h_r, res_h_r, eC_r)%*%invG_p_r
-		V_T_bc_l = invG_p_l%*%rdrobust_vce(dT+dZ, sV_T, Q_q_l, res_b_l, eC_l)%*%invG_p_l
-		V_T_bc_r = invG_p_r%*%rdrobust_vce(dT+dZ, sV_T, Q_q_r, res_b_r, eC_r)%*%invG_p_r
+		V_T_rb_l = invG_p_l%*%rdrobust_vce(dT+dZ, sV_T, Q_q_l, res_b_l, eC_l)%*%invG_p_l
+		V_T_rb_r = invG_p_r%*%rdrobust_vce(dT+dZ, sV_T, Q_q_r, res_b_r, eC_r)%*%invG_p_r
 		V_T_cl = factorial(deriv)^2*(V_T_cl_l+V_T_cl_r)[deriv+1,deriv+1]
-		V_T_rb = factorial(deriv)^2*(V_T_bc_l+V_T_bc_r)[deriv+1,deriv+1]
+		V_T_rb = factorial(deriv)^2*(V_T_rb_l+V_T_rb_r)[deriv+1,deriv+1]
 		se_tau_T_cl = sqrt(V_T_cl);	se_tau_T_rb = sqrt(V_T_rb)
 	}
   
@@ -446,8 +442,6 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
       ci_T[3,] = c(tau_T[3] - quant*se_T[3], tau_T[3] + quant*se_T[3])
   }
 
-  #print("Estimation Completed.") 
-
     coef=matrix(tau,3,1)
     se  =matrix(se,3,1)
     z   =matrix(t,3,1)
@@ -467,88 +461,131 @@ rdrobust = function(y, x, c = 0, fuzzy=NULL, deriv=0,  p=NULL, q=NULL, h=NULL, b
   rownames(ci)=c("Conventional","Bias-Corrected","Robust")
   colnames(ci)=c("CI Lower","CI Upper")
     
-  tabl1.str=matrix(NA,4,1)
-  rownames(tabl1.str)=c("Number of Obs", "NN Matches", "BW Type", "Kernel Type")
-  dimnames(tabl1.str) <-list(c("Number of Obs", "BW Type", "Kernel Type", "VCE Type"), rep("", dim(tabl1.str)[2]))
-  tabl1.str[1,1]=N
-  tabl1.str[2,1]=bwselect
-  tabl1.str[3,1]=kernel_type
-  tabl1.str[4,1]=vce_type
-  
-  tabl2.str=matrix(NA,7,2)
-  colnames(tabl2.str)=c("Left","Right")
-  rownames(tabl2.str)=c("Number of Obs","Eff. Number of Obs", "Order Loc Poly (p)","Order Bias (q)","BW Loc Poly (h)","BW Bias (b)","rho (h/b)")
-  tabl2.str[1,]=formatC(c(N_l,N_r),digits=0, format="f")
-  tabl2.str[2,]=formatC(c(N_h_l,N_h_r),digits=0, format="f")
-  tabl2.str[3,]=formatC(c(p,p),    digits=0, format="f")
-  tabl2.str[4,]=formatC(c(q,q),    digits=0, format="f")
-  tabl2.str[5,]=formatC(c(h_l,h_r),digits=4, format="f")
-  tabl2.str[6,]=formatC(c(b_l,b_r),digits=4, format="f")
-  tabl2.str[7,]=formatC(c(h_l/b_l,h_r/b_r),digits=4, format="f")
-  
-  tabl3.str=matrix("",2,6)
-  colnames(tabl3.str)=c("Coef","Std. Err.","z","P>|z|","CI Lower","CI Upper")
-  rownames(tabl3.str)=c("Conventional", "Robust")
-  tabl3.str[1,1]  =formatC(coef[1],digits=4, format="f")
-  tabl3.str[1,2]  =formatC(se[1],  digits=4, format="f")
-  tabl3.str[1,3]  =formatC(z[1],   digits=4, format="f")
-  tabl3.str[1,4]  =formatC(pv[1],  digits=4, format="f")
-  tabl3.str[1,5:6]=formatC(ci[1,], digits=4, format="f")
-  tabl3.str[2,4]  =formatC(pv[3],  digits=4, format="f")
-  tabl3.str[2,5:6]=formatC(ci[3,] ,digits=4, format="f")
-  
-  if (all==TRUE){
-    tabl3.str=formatC(cbind(coef,se,z,pv,ci),digits=4, format="f")                   
-    colnames(tabl3.str)=c("Coef","Std. Err.","z","P>|z|","CI Lower","CI Upper")
-  }
+  Estimate=matrix(NA,1,4)
+  colnames(Estimate)=c("tau.us","tau.bc","se.us","se.rb")
+  Estimate[1,] <- c(tau_cl,tau_bc, se_tau_cl, se_tau_rb) 
 
-  out=list(tabl1.str=tabl1.str,tabl2.str=tabl2.str,tabl3.str=tabl3.str,
-           N=N, N_l=N_l, N_r=N_r, N_h_l=N_h_l, N_h_r=N_h_r, N_b_l=N_b_l, N_b_r=N_b_r,
-           c=c, p=p, q=q, h_l=bws[1,1],h_r=bws[1,2], b_l=bws[2,1],b_r=bws[2,2],
-           tau_cl=tau_cl, tau_bc=tau_bc, se_tau_cl=se_tau_cl, se_tau_rb=se_tau_rb, bias_l=bias_l,bias_r=bias_r,
-           beta_p_l=beta_p_l, beta_p_r=beta_p_r, 
-           V_cl_l=V_Y_cl_l, V_cl_r=V_Y_cl_r, V_rb_l=V_Y_bc_l, V_rb_r=V_Y_bc_l,
-           coef=coef,bws=bws,se=se, z=z, pv=pv, ci=ci)
+  out=list(Estimate=Estimate, bws=bws, coef=coef,bws=bws,se=se, z=z, pv=pv, ci=ci,
+           h_l=h_l, h_r=h_r, b_l=b_l, b_r=b_r, N_h_l=N_h_l, N_h_r=N_h_r,
+           beta_p_l=beta_p_l, beta_p_r=beta_p_r,
+           V_cl=c(V_Y_cl_l, V_Y_cl_r), V_rb=c(V_Y_rb_l, V_Y_rb_r),
+           N=c(N_l,N_r), Nh=c(N_h_l,N_h_r), Nb=c(N_b_l,N_b_r),
+           c=c, p=p, q=q, bias=c(bias_l,bias_r),
+           beta_p=c(beta_p_l,beta_p_r), kernel=kernel_type, vce=vce_type, bwselect=bwselect)
   out$call <- match.call()
   class(out) <- "rdrobust"
   return(out)
 }
 
-#rdrobust <- function(y,x, ...) UseMethod("rdrobust")
-
-#rdrobust.default <- function(y,x,  ...){
-#  est <- rdrobustEst(y,x, ...)
-#  est$call <- match.call()
-#  class(est) <- "rdrobust"
-#  est
-#}
 
 print.rdrobust <- function(x,...){
-  cat("Call:\n")
-  print(x$call)
-  cat("\nSummary:\n")
-  print(x$tabl1.str,quote=F)  
+  cat("Call: rdrobust\n\n")
+  cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
+  cat(paste("BW type                  ",  format(x$bwselect, width=10, justify="right"),"\n", sep=""))
+  cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
+  cat(paste("VCE method               ",  format(x$vce,      width=10, justify="right"),"\n", sep=""))
   cat("\n")
-  print(x$tabl2.str,quote=F)
-  cat("\nEstimates:\n")
-  print(x$tabl3.str,quote=F)
+  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$Nh[1],width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$Nh[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("Order bias  (p)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("BW est. (h)              ",  format(sprintf("%9.3f",x$bws[1,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2],  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("BW bias (b)              ",  format(sprintf("%9.3f",x$bws[2,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("rho (h/b)                ",  format(sprintf("%9.3f",x$bws[1,1]/x$bws[2,1],width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2]/x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
+  
+  cat("\n")
+  #cat(paste(format(sprintf("%9.3f",x$bws,"\n", sep="")))) 
 }
 
 summary.rdrobust <- function(object,...) {
-  TAB <- cbind(Estimate    =object$coef,
-               "Std. Error"=object$se,
-               "z"         =object$z,
-               "Pr(>|z|)"  =object$pv,
-               "95% CI"    =object$ci)
-  res <- list(call=object$call, coefficients=TAB)
-  class(res) <- "summary.rdrobust"
-  res
-}
+  x    <- object
+  args <- list(...)
+  if (is.null(args[['level']])) { level <- 0.05 } else { level <- args[['level']] }
 
-#print.summary.rdrobust <- function(x, ...){
-#  cat("Call:\n")
-#  print(x$call)
-#  cat("\n")
-#  printCoefmat(x$coef)
-#  printCoefmat(x$coefficients, P.values=TRUE, has.Pvalue=TRUE)
-#}
+  cat("Call: rdrobust\n\n")
+  cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
+  cat(paste("BW type                  ",  format(x$bwselect, width=10, justify="right"),"\n", sep=""))
+  cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
+  cat(paste("VCE method               ",  format(x$vce,      width=10, justify="right"),"\n", sep=""))
+  cat("\n")
+  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$Nh[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$Nh[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("Order bias  (p)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("BW est. (h)              ",  format(sprintf("%9.3f",x$bws[1,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2],  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("BW bias (b)              ",  format(sprintf("%9.3f",x$bws[2,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("rho (h/b)                ",  format(sprintf("%9.3f",x$bws[1,1]/x$bws[2,1],    width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2]/x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
+  cat("\n")
+
+  ### compute CI
+  z    <- qnorm(1 - level / 2)
+  CI_us_l <- x$Estimate[, "tau.us"] - x$Estimate[, "se.us"] * z;
+  CI_us_r <- x$Estimate[, "tau.us"] + x$Estimate[, "se.us"] * z;
+  CI_bc_l <- x$Estimate[, "tau.bc"] - x$Estimate[, "se.us"] * z;
+  CI_bc_r <- x$Estimate[, "tau.bc"] + x$Estimate[, "se.us"] * z;
+  CI_rb_l <- x$Estimate[, "tau.bc"] - x$Estimate[, "se.rb"] * z;
+  CI_rb_r <- x$Estimate[, "tau.bc"] + x$Estimate[, "se.rb"] * z;
+  
+  t_us =x$Estimate[, "tau.us"]/x$Estimate[, "se.us"]
+  t_bc =x$Estimate[, "tau.bc"]/x$Estimate[, "se.us"]
+  t_rb =x$Estimate[, "tau.bc"]/x$Estimate[, "se.rb"]
+  
+  pv_us = 2*pnorm(-abs(t_us))
+  pv_bc = 2*pnorm(-abs(t_bc))
+  pv_rb = 2*pnorm(-abs(t_rb))
+  
+  ### print output
+  cat(paste(rep("=", 14 + 10 + 8 + 10 + 10 + 25), collapse="")); cat("\n")
+  
+  cat(format("Method"          , width=14, justify="right"))
+  cat(format("Coef."           , width=10, justify="right"))
+  cat(format("Std. Err."       , width=10 , justify="right"))
+  cat(format("z"               , width=10, justify="right"))
+  cat(format("P>|z|"           , width=10, justify="right"))
+  cat(format(paste("[ ", floor((1-level)*100), "%", " C.I. ]", sep=""), width=25, justify="centre"))
+  cat("\n")
+  
+  cat(paste(rep("=", 14 + 10 + 8 + 10 + 10 + 25), collapse="")); cat("\n")
+  
+    cat(format("Conventional", width=14, justify="right"))
+    cat(format(sprintf("%3.3f", x$Estimate[1, "tau.us"]) , width=10, justify="right"))
+    cat(format(paste(sprintf("%3.3f", x$Estimate[1, "se.us"]), sep=""), width=10, justify="right"))
+    cat(format(sprintf("%3.3f", t_us) , width=10, justify="right"))
+    cat(format(sprintf("%3.3f", pv_us), width=10, justify="right"))
+    cat(format(paste("[", sprintf("%3.3f", CI_us_l[1]), " , ", sep="")  , width=14, justify="right"))
+    cat(format(paste(sprintf("%3.3f", CI_us_r[1]), "]", sep=""), width=11, justify="left"))
+    cat("\n")
+    
+    if (is.null(args[['all']])) {
+      cat(format("Robust", width=14, justify="right"))
+      cat(format("-", width=10, justify="right"))
+      cat(format("-", width=10, justify="right"))
+      #cat(format(sprintf("%3.3f", x$Estimate[1, "tau.bc"]) , width=10, justify="right"))
+      #cat(format(paste(sprintf("%3.3f", x$Estimate[1, "se.rb"]), sep=""), width=10, justify="right"))
+      cat(format(sprintf("%3.3f", t_rb) , width=10, justify="right"))
+      cat(format(sprintf("%3.3f", pv_rb), width=10, justify="right"))
+      cat(format(paste("[", sprintf("%3.3f", CI_rb_l[1]), " , ", sep="")  , width=14, justify="right"))
+      cat(format(paste(sprintf("%3.3f", CI_rb_r[1]), "]", sep=""), width=11, justify="left"))
+      cat("\n") 
+    } else {
+      cat(format("Bias-Corrected", width=14, justify="right"))
+      cat(format(sprintf("%3.3f", x$Estimate[1, "tau.bc"]) , width=10, justify="right"))
+      cat(format(paste(sprintf("%3.3f", x$Estimate[1, "se.us"]), sep=""), width=10, justify="right"))
+      cat(format(sprintf("%3.3f", t_bc) , width=10, justify="right"))
+      cat(format(sprintf("%3.3f", pv_bc), width=10, justify="right"))
+      cat(format(paste("[", sprintf("%3.3f", CI_bc_l[1]), " , ", sep="")  , width=14, justify="right"))
+      cat(format(paste(sprintf("%3.3f", CI_bc_r[1]), "]", sep=""), width=11, justify="left"))
+      cat("\n")
+  
+      cat(format("Robust", width=14, justify="right"))
+      cat(format(sprintf("%3.3f", x$Estimate[1, "tau.bc"]) , width=10, justify="right"))
+      cat(format(paste(sprintf("%3.3f", x$Estimate[1, "se.rb"]), sep=""), width=10, justify="right"))
+      cat(format(sprintf("%3.3f", t_rb) , width=10, justify="right"))
+      cat(format(sprintf("%3.3f", pv_rb), width=10, justify="right"))
+      cat(format(paste("[", sprintf("%3.3f", CI_rb_l[1]), " , ", sep="")  , width=14, justify="right"))
+      cat(format(paste(sprintf("%3.3f", CI_rb_r[1]), "]", sep=""), width=11, justify="left"))
+      cat("\n")
+    }
+    
+  cat(paste(rep("=", 14 + 10 + 8 + 10 + 10 + 25), collapse="")); cat("\n")
+}

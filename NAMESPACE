@@ -1,4 +1,7 @@
-exportPattern("^[[:alpha:]]+")
+export(rdbwselect)
+export(rdrobust)
+export(rdplot) 
+export(rdbwselect_2014)
 S3method(print,rdrobust)
 S3method(summary,rdrobust)
 S3method(print,rdbwselect)
@@ -9,5 +12,5 @@ S3method(print,rdplot)
 S3method(summary,rdplot)
 importFrom("graphics", "abline", "arrows", "lines", "plot", "polygon")
 importFrom("stats", "IQR", "complete.cases", "integrate", "median",
-              "pnorm", "poly", "qnorm", "quantile", "sd", "var")
+              "pnorm", "poly", "qnorm", "quantile", "sd", "var", "qt")
 
