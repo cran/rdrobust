@@ -9,8 +9,8 @@
 \tabular{ll}{
 Package: \tab rdrobust\cr
 Type: \tab Package\cr
-Version: \tab 0.98\cr 
-Date: \tab 2017-06-09\cr
+Version: \tab 0.99\cr 
+Date: \tab 2018-01-03\cr
 License: \tab GPL-2\cr
 }
 Function for statistical inference: \code{\link{rdrobust}}\cr
@@ -26,6 +26,3 @@ Max H. Farrell, University of Chicago, Chicago, IL. \email{max.farrell@chicagobo
 
 Rocio Titiunik, University of Michigan, Ann Arbor, MI.  \email{titiunik@umich.edu}.
 }
-
-
-

@@ -78,7 +78,7 @@ If not specified, the bandwidths are chosen to span the full support of the data
   \item{genvars}{data frame containing the variables used to construct the bins: bin id, cutoff values, mean of x and y within each bin, cutoff points and confidence interval bounds.}
 }
 \references{
-Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}{rdrobust: Software for Regression Discontinuity Designs.} \emph{Stata Journal}, forthcoming.
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}{rdrobust: Software for Regression Discontinuity Designs.} \emph{Stata Journal} 17(2): 372-404.
 
 Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}{Robust Data-Driven Inference in the Regression-Discontinuity Design.} \emph{Stata Journal} 14(4): 909-946.
 

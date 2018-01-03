@@ -1,4 +1,4 @@
-### version 0.98 09Jun2017 
+### version 0.99 22Dec2017 
 
 rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=NULL, b=NULL, rho=NULL, covs=NULL, 
                     kernel="tri", weights=NULL, bwselect="mserd", 
@@ -168,7 +168,10 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
     #print("Preparing data.") 
     
     if (is.null(h)) {
-      rdbws=rdbwselect(y=y, x=x,  covs=covs, cluster=cluster, fuzzy=fuzzy, c=c, deriv=deriv, p=p, q=q, vce=vce, bwselect=bwselect, kernel=kernel, weights=weights, scaleregul=scaleregul, sharpbw=sharpbw)
+      rdbws=rdbwselect(y=y, x=x, c=c, fuzzy=fuzzy,  deriv=deriv, p=p, q=q, covs=covs, 
+                       kernel=kernel,  weights=weights, bwselect=bwselect,  
+                       vce=vce, cluster=cluster,  nnmatch=nnmatch,  scaleregul=scaleregul,
+                       sharpbw = sharpbw, subset=subset)
       h_l = c(rdbws$bws[1]); b_l = c(rdbws$bws[3])
       h_r = c(rdbws$bws[2]); b_r = c(rdbws$bws[4])
       
@@ -471,7 +474,8 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
            V_cl=c(V_Y_cl_l, V_Y_cl_r), V_rb=c(V_Y_rb_l, V_Y_rb_r),
            N=c(N_l,N_r), Nh=c(N_h_l,N_h_r), Nb=c(N_b_l,N_b_r),
            c=c, p=p, q=q, bias=c(bias_l,bias_r),
-           beta_p=c(beta_p_l,beta_p_r), kernel=kernel_type, vce=vce_type, bwselect=bwselect)
+           beta_p=c(beta_p_l,beta_p_r), kernel=kernel_type, 
+           vce=vce_type, bwselect=bwselect, level=level, all=all)
   out$call <- match.call()
   class(out) <- "rdrobust"
   return(out)
@@ -500,7 +504,7 @@ print.rdrobust <- function(x,...){
 summary.rdrobust <- function(object,...) {
   x    <- object
   args <- list(...)
-  if (is.null(args[['level']])) { level <- 0.05 } else { level <- args[['level']] }
+  #if (is.null(args[['level']])) { level <- 0.05 } else { level <- args[['level']] }
 
   cat("Call: rdrobust\n\n")
   cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
@@ -518,7 +522,9 @@ summary.rdrobust <- function(object,...) {
   cat("\n")
 
   ### compute CI
-  z    <- qnorm(1 - level / 2)
+  #z    <- qnorm(100 - level / 2)
+  z <- -qnorm(abs((1-(x$level/100))/2))
+  
   CI_us_l <- x$Estimate[, "tau.us"] - x$Estimate[, "se.us"] * z;
   CI_us_r <- x$Estimate[, "tau.us"] + x$Estimate[, "se.us"] * z;
   CI_bc_l <- x$Estimate[, "tau.bc"] - x$Estimate[, "se.us"] * z;
@@ -542,7 +548,7 @@ summary.rdrobust <- function(object,...) {
   cat(format("Std. Err."       , width=10 , justify="right"))
   cat(format("z"               , width=10, justify="right"))
   cat(format("P>|z|"           , width=10, justify="right"))
-  cat(format(paste("[ ", floor((1-level)*100), "%", " C.I. ]", sep=""), width=25, justify="centre"))
+  cat(format(paste("[ ", x$level, "%", " C.I. ]", sep=""), width=25, justify="centre"))
   cat("\n")
   
   cat(paste(rep("=", 14 + 10 + 8 + 10 + 10 + 25), collapse="")); cat("\n")
@@ -556,7 +562,8 @@ summary.rdrobust <- function(object,...) {
     cat(format(paste(sprintf("%3.3f", CI_us_r[1]), "]", sep=""), width=11, justify="left"))
     cat("\n")
     
-    if (is.null(args[['all']])) {
+    #if (is.null(args[['all']])) {
+    if (is.null(x$all)) {
       cat(format("Robust", width=14, justify="right"))
       cat(format("-", width=10, justify="right"))
       cat(format("-", width=10, justify="right"))

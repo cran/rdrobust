@@ -1,4 +1,4 @@
-### version 0.98 09Jun2017 
+### version 0.99 22Dec2017 
 
 rdplot = function(y, x, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kernel = "uni", weights=NULL, h=NULL, covs=NULL, 
                   support=NULL, subset = NULL, hide=FALSE, ci=NULL, shade=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
@@ -79,6 +79,11 @@ rdplot = function(y, x, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kern
     ci<- 95
     flag_no_ci <- TRUE
   }
+  
+  kernel_type = "Uniform"
+  if (kernel=="epanechnikov" | kernel=="epa") kernel_type = "Epanechnikov"
+  if (kernel=="triangular" | kernel=="tri") kernel_type = "Triangular"
+  
   
   #####********************* ERRORS
   exit=0
@@ -431,8 +436,9 @@ rdplot = function(y, x, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kern
     if (is.null(title)) title="RD Plot"
     if (is.null(x.label)) x.label="X axis"
     if (is.null(y.label)) y.label="Y axis"
-    if (is.null(x.lim)) x.lim=c(min(x_l),max(x_r))
-    if (is.null(y.lim)) y.lim=c(min(c(y_l,y_r)),max(c(y_l,y_r)))
+    #if (is.null(x.lim)) x.lim=c(min(x_l),max(x_r))
+    #if (is.null(y.lim)) y.lim=c(min(c(y_l,y_r)),max(c(y_l,y_r)))
+    #if (is.null(y.lim)) y.lim=c(min(rdplot_mean_y),max(rdplot_mean_y))
     
     par=par
     if (flag_no_ci==TRUE) {
@@ -478,7 +484,7 @@ rdplot = function(y, x, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kern
              J=c(J_star_l,J_star_r), J_IMSE=J_IMSE, J_MV=J_MV, 
              scale=c(scale_l,scale_r), rscale=c(rscale_l,rscale_r),
              bin_avg=c(bin_avg_l,bin_avg_r), bin_med=c(bin_med_l,bin_med_r),
-             p=p, c=c, h=c(h_l,h_r), N=c(n_l,n_r), Nh=c(n_h_l,n_h_r), binselect=binselect_type, kernel=kernel)
+             p=p, c=c, h=c(h_l,h_r), N=c(n_l,n_r), Nh=c(n_h_l,n_h_r), binselect=binselect_type, kernel=kernel_type)
     
     out$call <- match.call()
     class(out) <- "rdplot"

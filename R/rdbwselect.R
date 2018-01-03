@@ -1,4 +1,4 @@
-### version 0.98 09Jun2017 
+### version 0.99 22Dec2017 
 
 rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, covs = NULL,  
                       kernel="tri", weights=NULL, bwselect="mserd",  
@@ -92,6 +92,7 @@ rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, co
   c = c/x_sd
 	
   #x_sd = sd(x)
+  #x_iq = quantile(x,.75, type=6) - quantile(x,.25, type=6)
   x_iq = quantile(x,.75) - quantile(x,.25)
   
   X_l = x[x<c];   
@@ -423,7 +424,7 @@ summary.rdbwselect <- function(object,...) {
   cat("\n")
   cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
   cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("Order bias  (p)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("Order bias  (q)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
   cat("\n")
   
   

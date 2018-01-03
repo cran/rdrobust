@@ -5,7 +5,7 @@
 \title{Bandwidth Selection Procedures for Local Polynomial Regression Discontinuity Estimators}
 \description{
 
-\code{\link{rdbwselect}} implements bandwidth selectors for local polynomial Regression Discontinuity (RD) point estimators and inference procedures developed in Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2017), and Calonico, Cattaneo, Farrell and Titiunik (2016).
+\code{\link{rdbwselect}} implements bandwidth selectors for local polynomial Regression Discontinuity (RD) point estimators and inference procedures developed in Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2017), and Calonico, Cattaneo, Farrell and Titiunik (2017).
 
 Companion commands are: \code{\link{rdrobust}} for point estimation and inference procedures, and \code{\link{rdplot}} for data-driven RD plots (see Calonico, Cattaneo and Titiunik (2015a) for details).
 
@@ -51,7 +51,7 @@ For more details, and related Stata and R packages useful for analysis of RD des
 \code{cercomb2} for median(\code{certwo},\code{cerrd},\code{cersum}), for each side of the cutoff separately.
 
 Note: MSE = Mean Square Error; CER = Coverage Error Rate.
-Default is \code{bwselect=mserd}. For details on implementation see Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2017), and Calonico, Cattaneo, Farrell and Titiunik (2016), and the companion software articles.}
+Default is \code{bwselect=mserd}. For details on implementation see Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2017), and Calonico, Cattaneo, Farrell and Titiunik (2017), and the companion software articles.}
   \item{vce}{specifies the procedure used to compute the variance-covariance matrix estimator.
 Options are:
 
@@ -87,9 +87,9 @@ Default is \code{vce=nn}.}
 
 Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2017. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell_2017_JASA.pdf}{On the Effect of Bias Estimation on Coverage Accuracy in Nonparametric Inference.} \emph{Journal of the American Statistical Association}, forthcoming.
 
-Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}{rdrobust: Software for Regression Discontinuity Designs.} \emph{Stata Journal}, forthcoming.
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}{rdrobust: Software for Regression Discontinuity Designs.} \emph{Stata Journal} 17(2): 372-404.
 
-Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2016. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2016_wp.pdf}{Regression Discontinuity Designs using Covariates.} Working Paper.
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Farrell-Titiunik_2017_wp.pdf}{Regression Discontinuity Designs using Covariates.} Working Paper.
 
 Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014a. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}{Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs.} \emph{Econometrica} 82(6): 2295-2326.
 
