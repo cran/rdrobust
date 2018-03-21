@@ -1,5 +1,3 @@
-### version 0.99 22Dec2017 
-
 rdplot = function(y, x, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kernel = "uni", weights=NULL, h=NULL, covs=NULL, 
                   support=NULL, subset = NULL, hide=FALSE, ci=NULL, shade=FALSE, par=NULL, title=NULL, x.label=NULL, y.label=NULL, 
                   x.lim=NULL, y.lim=NULL, col.dots=NULL, col.lines=NULL, type.dots = NULL,...) {

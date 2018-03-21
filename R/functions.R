@@ -1,5 +1,3 @@
-### version 0.99 22Dec2017 
-
 qrXXinv = function(x, ...) {
   #tcrossprod(solve(qr.R(qr(x, tol = 1e-10)), tol = 1e-10))
   #tcrossprod(solve(qr.R(qr(x))))
@@ -117,7 +115,7 @@ rdrobust_bw = function(Y, X, T, Z, C, W, c, o, nu, o_B, h_V, h_B, scale, vce, nn
     U = crossprod(R_V*eW,D_V)
     ZWD  = crossprod(eZ*eW,D_V)
     colsZ = (2+dT):max(c(2+dT+dZ-1,(2+dT)))
-    UiGU =  crossprod(U[,colsZ],invG_V%*%U) 
+    UiGU =  crossprod(matrix(U[,colsZ],nrow=o+1),invG_V%*%U) 
     ZWZ = ZWD[,colsZ] - UiGU[,colsZ] 
     ZWY = ZWD[,1:(1+dT)] - UiGU[,1:(1+dT)] 
     gamma = chol2inv(chol(ZWZ))%*%ZWY
@@ -367,7 +365,3 @@ regconst = function(d,h){
   invXX =solve(XX)
   return(invXX)
 }
-
-
-
-

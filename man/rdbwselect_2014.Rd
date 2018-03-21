@@ -66,7 +66,7 @@
   \item{q}{order of the local-polynomial used to construct the bias-correction estimator.}
 }
 \references{
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014. \href{http://www-personal.umich.edu/~cattaneo/papers/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}{Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs.} \emph{Econometrica} 82(6): 2295-2326, November 2014.   .
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}{Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs.} \emph{Econometrica} 82(6): 2295-2326.   .
 }
 \author{
 Sebastian Calonico, University of Miami, Coral Gables, FL.  \email{scalonico@bus.miami.edu}.

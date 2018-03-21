@@ -1,5 +1,3 @@
-### version 0.99 22Dec2017 
-
 rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=NULL, b=NULL, rho=NULL, covs=NULL, 
                     kernel="tri", weights=NULL, bwselect="mserd", 
                     vce="nn", cluster=NULL, nnmatch=3, level=95, scalepar=1, scaleregul=1, sharpbw=FALSE, 
@@ -327,8 +325,8 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
     ZWD_p_l  = crossprod(eZ_l*W_h_l,D_l)
     ZWD_p_r  = crossprod(eZ_r*W_h_r,D_r)
     colsZ = (2+dT):max(c(2+dT+dZ-1,(2+dT)))
-    UiGU_p_l =  crossprod(U_p_l[,colsZ],invG_p_l%*%U_p_l) 
-    UiGU_p_r =  crossprod(U_p_r[,colsZ],invG_p_r%*%U_p_r) 
+    UiGU_p_l =  crossprod(matrix(U_p_l[,colsZ],nrow=p+1),invG_p_l%*%U_p_l) 
+    UiGU_p_r =  crossprod(matrix(U_p_r[,colsZ],nrow=p+1),invG_p_r%*%U_p_r) 
     ZWZ_p_l = ZWD_p_l[,colsZ] - UiGU_p_l[,colsZ] 
     ZWZ_p_r = ZWD_p_r[,colsZ] - UiGU_p_r[,colsZ]     
     ZWY_p_l = ZWD_p_l[,1:(1+dT)] - UiGU_p_l[,1:(1+dT)] 
@@ -471,10 +469,10 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
   out=list(Estimate=Estimate, bws=bws, coef=coef,bws=bws,se=se, z=z, pv=pv, ci=ci,
            h_l=h_l, h_r=h_r, b_l=b_l, b_r=b_r, N_h_l=N_h_l, N_h_r=N_h_r,
            beta_p_l=beta_p_l, beta_p_r=beta_p_r,
-           V_cl=c(V_Y_cl_l, V_Y_cl_r), V_rb=c(V_Y_rb_l, V_Y_rb_r),
+           V_cl_l=V_Y_cl_l, V_cl_r=V_Y_cl_r, V_rb_l=V_Y_rb_l, V_rb_r=V_Y_rb_r,
            N=c(N_l,N_r), Nh=c(N_h_l,N_h_r), Nb=c(N_b_l,N_b_r),
            c=c, p=p, q=q, bias=c(bias_l,bias_r),
-           beta_p=c(beta_p_l,beta_p_r), kernel=kernel_type, 
+           beta_p=cbind(beta_p_l,beta_p_r), kernel=kernel_type, 
            vce=vce_type, bwselect=bwselect, level=level, all=all)
   out$call <- match.call()
   class(out) <- "rdrobust"
@@ -596,3 +594,4 @@ summary.rdrobust <- function(object,...) {
     
   cat(paste(rep("=", 14 + 10 + 8 + 10 + 10 + 25), collapse="")); cat("\n")
 }
+

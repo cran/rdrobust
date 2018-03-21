@@ -1,12 +1,3 @@
-### version 0.1  18Nov2013
-### version 0.2  26Nov2013
-### version 0.3  21Abr2014 
-### version 0.5  06Jun2014
-### version 0.6  17Jun2014
-### version 0.61 03Sep2014
-### version 0.7  14Oct2014
-### version 0.8  04Feb2015
-
 rdbwselect_2014 = function(y, x, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NULL, kernel="tri", bwselect="CCT", scaleregul=1, delta=0.5, cvgrid_min=NULL, cvgrid_max=NULL, cvgrid_length=NULL, cvplot=FALSE, vce="nn", matches=3, all=FALSE, precalc=TRUE){
   
   if (!is.null(subset)) {

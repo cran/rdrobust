@@ -1,9 +1,6 @@
-### version 0.99 22Dec2017 
-
 rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, covs = NULL,  
-                      kernel="tri", weights=NULL, bwselect="mserd",  
-                      vce="nn", cluster = NULL,  nnmatch=3,  scaleregul=1, 
-                      sharpbw=FALSE,  all=NULL, subset = NULL){
+                      kernel="tri", weights=NULL, bwselect="mserd", vce="nn", cluster = NULL, 
+                      nnmatch=3,  scaleregul=1, sharpbw=FALSE,  all=NULL, subset = NULL){
   
   if (!is.null(subset)) {
     x <- x[subset]
@@ -93,7 +90,7 @@ rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, co
 	
   #x_sd = sd(x)
   #x_iq = quantile(x,.75, type=6) - quantile(x,.25, type=6)
-  x_iq = quantile(x,.75) - quantile(x,.25)
+  x_iq = quantile(x,.75,type=2) - quantile(x,.25,type=2)
   
   X_l = x[x<c];   
   x_l_min = min(X_l)
