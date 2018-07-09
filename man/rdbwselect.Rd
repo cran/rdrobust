@@ -89,7 +89,7 @@ Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2018. \href{https://sites.googl
 
 Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}{rdrobust: Software for Regression Discontinuity Designs.} \emph{Stata Journal} 17(2): 372-404.
 
-Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2018. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2018_RESTAT.pdf}{Regression Discontinuity Designs using Covariates.} Working Paper.
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2018. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2018_RESTAT.pdf}{Regression Discontinuity Designs using Covariates.} \emph{Review of Economics and Statistics}, forthcoming. 
 
 Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014a. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}{Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs.} \emph{Econometrica} 82(6): 2295-2326.
 

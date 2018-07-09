@@ -467,13 +467,12 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
   Estimate[1,] <- c(tau_cl,tau_bc, se_tau_cl, se_tau_rb) 
 
   out=list(Estimate=Estimate, bws=bws, coef=coef,bws=bws,se=se, z=z, pv=pv, ci=ci,
-           h_l=h_l, h_r=h_r, b_l=b_l, b_r=b_r, N_h_l=N_h_l, N_h_r=N_h_r,
            beta_p_l=beta_p_l, beta_p_r=beta_p_r,
            V_cl_l=V_Y_cl_l, V_cl_r=V_Y_cl_r, V_rb_l=V_Y_rb_l, V_rb_r=V_Y_rb_r,
            N=c(N_l,N_r), Nh=c(N_h_l,N_h_r), Nb=c(N_b_l,N_b_r),
-           c=c, p=p, q=q, bias=c(bias_l,bias_r),
-           beta_p=cbind(beta_p_l,beta_p_r), kernel=kernel_type, 
-           vce=vce_type, bwselect=bwselect, level=level, all=all)
+           tau_cl=c(tau_Y_cl_l,tau_Y_cl_r), tau_bc=c(tau_Y_bc_l,tau_Y_bc_r),
+           c=c, p=p, q=q, bias=c(bias_l,bias_r), kernel=kernel_type, 
+           vce=vce_type, bwselect=bwselect, level=level)
   out$call <- match.call()
   class(out) <- "rdrobust"
   return(out)

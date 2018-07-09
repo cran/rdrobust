@@ -97,16 +97,17 @@ Default is \code{vce=nn}.}
   \item{p}{order of the polynomial used for estimation of the regression function.}
   \item{q}{order of the polynomial used for estimation of the bias of the regression function.}
   \item{bws}{matrix containing the bandwidths used.}
-  \item{tau_cl}{conventional local-polynomial RD estimate.}
-  \item{tau_bc}{bias-corrected local-polynomial RD estimate.}
-  \item{se_tau_cl}{conventional standard error of the local-polynomial RD estimator.}
-  \item{se_tau_rb}{robust standard error of the local-polynomial RD estimator.}
-  \item{bias}{estimated bias for the local-polynomial RD estimator below and above the cutoff.}
-  \item{beta_p}{conventional p-order local-polynomial estimates to the left and to the right of the cutoff.}
-  \item{V_cl}{conventional variance-covariance matrix estimated below and above the cutoff.}
-  \item{V_rb}{robust variance-covariance matrix estimated below and above the cutoff.}
+  \item{tau_cl}{conventional local-polynomial estimate to the left and to the right of the cutoff.}
+  \item{tau_bc}{bias-corrected local-polynomial estimate to the left and to the right of the cutoff.}
   \item{coef}{vector containing conventional and bias-corrected local-polynomial RD estimates.}
   \item{se}{vector containing conventional and robust standard errors of the local-polynomial RD estimates.}
+  \item{bias}{estimated bias for the local-polynomial RD estimator below and above the cutoff.}
+  \item{beta_p_l}{conventional p-order local-polynomial estimates to the left of the cutoff.}
+  \item{beta_p_r}{conventional p-order local-polynomial estimates to the right of the cutoff.}
+  \item{V_cl_l}{conventional variance-covariance matrix estimated below the cutoff.}
+  \item{V_cl_r}{conventional variance-covariance matrix estimated above the cutoff.}
+  \item{V_rb_l}{robust variance-covariance matrix estimated below the cutoff.}
+  \item{V_rb_r}{robust variance-covariance matrix estimated above the cutoff.}
   \item{pv}{vector containing the p-values associated with conventional, bias-corrected and robust local-polynomial RD estimates.}
   \item{ci}{matrix containing the confidence intervals associated with conventional, bias-corrected and robust local-polynomial RD estimates.}
 }
@@ -115,7 +116,7 @@ Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2018. \href{https://sites.googl
 
 Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}{rdrobust: Software for Regression Discontinuity Designs.} \emph{Stata Journal}, 17(2): 372-404.
 
-Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2018. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2018_RESTAT.pdf}{Regression Discontinuity Designs using Covariates.} Working Paper.
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2018. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2018_RESTAT.pdf}{Regression Discontinuity Designs using Covariates.} \emph{Review of Economics and Statistics}, forthcoming. 
 
 Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014a. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}{Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs.} \emph{Econometrica} 82(6): 2295-2326.
 
