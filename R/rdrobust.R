@@ -335,16 +335,20 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
     ZWY_p = ZWY_p_r + ZWY_p_l
     gamma_p = chol2inv(chol(ZWZ_p))%*%ZWY_p
     s_Y = c(1 ,  -gamma_p[,1])
+    
+    
+    
     if (is.null(fuzzy)) {
         tau_cl = t(s_Y)%*%beta_p[(deriv+1),]
         tau_bc = t(s_Y)%*%beta_bc[(deriv+1),]
         
-        tau_cl_l = t(s_Y)%*%beta_p_l[(deriv+1),]
-        tau_cl_r = t(s_Y)%*%beta_p_r[(deriv+1),]
-        tau_bc_l = t(s_Y)%*%beta_bc_l[(deriv+1),]
-        tau_bc_r = t(s_Y)%*%beta_bc_r[(deriv+1),]
-        bias_l = tau_cl_l-tau_bc_l
-        bias_r = tau_cl_r-tau_bc_r 
+        tau_Y_cl_l = t(s_Y)%*%beta_p_l[(deriv+1),]
+        tau_Y_cl_r = t(s_Y)%*%beta_p_r[(deriv+1),]
+        tau_Y_bc_l = t(s_Y)%*%beta_bc_l[(deriv+1),]
+        tau_Y_bc_r = t(s_Y)%*%beta_bc_r[(deriv+1),]
+        bias_l = tau_Y_cl_l-tau_Y_bc_l
+        bias_r = tau_Y_cl_r-tau_Y_bc_r 
+
     } else {
       s_T  = c(1,    -gamma_p[,2])
       sV_T = c(0, 1, -gamma_p[,2])
@@ -466,7 +470,7 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
   colnames(Estimate)=c("tau.us","tau.bc","se.us","se.rb")
   Estimate[1,] <- c(tau_cl,tau_bc, se_tau_cl, se_tau_rb) 
 
-  out=list(Estimate=Estimate, bws=bws, coef=coef,bws=bws,se=se, z=z, pv=pv, ci=ci,
+  out=list(Estimate=Estimate, bws=bws, coef=coef, se=se, z=z, pv=pv, ci=ci,
            beta_p_l=beta_p_l, beta_p_r=beta_p_r,
            V_cl_l=V_Y_cl_l, V_cl_r=V_Y_cl_r, V_rb_l=V_Y_rb_l, V_rb_r=V_Y_rb_r,
            N=c(N_l,N_r), Nh=c(N_h_l,N_h_r), Nb=c(N_b_l,N_b_r),
