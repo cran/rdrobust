@@ -9,8 +9,8 @@
 \tabular{ll}{
 Package: \tab rdrobust\cr
 Type: \tab Package\cr
-Version: \tab 0.99.3\cr 
-Date: \tab 2018-07-12\cr
+Version: \tab 0.99.4\cr 
+Date: \tab 2018-09-25\cr
 License: \tab GPL-2\cr
 }
 Function for statistical inference: \code{\link{rdrobust}}\cr

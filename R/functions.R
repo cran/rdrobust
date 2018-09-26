@@ -1,7 +1,7 @@
 qrXXinv = function(x, ...) {
   #tcrossprod(solve(qr.R(qr(x, tol = 1e-10)), tol = 1e-10))
   #tcrossprod(solve(qr.R(qr(x))))
-  chol2inv(chol(crossprod(x)))
+  chol2inv(chol(crossprod(x))) 
 }
 
 qrreg = function(x,y,w,s2=0,var.comp=TRUE, ...) {

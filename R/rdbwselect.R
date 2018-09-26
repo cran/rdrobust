@@ -2,7 +2,7 @@ rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, co
                       kernel="tri", weights=NULL, bwselect="mserd", vce="nn", cluster = NULL, 
                       nnmatch=3,  scaleregul=1, sharpbw=FALSE,  all=NULL, subset = NULL){
   
-  if (!is.null(subset)) {
+  if (!is.null(subset)) { 
     x <- x[subset]
     y <- y[subset]
   }
@@ -81,25 +81,21 @@ rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, co
   }
   
   ### reescaling
+  c_orig = c
   y_sd = sd(y)
-	y = y/y_sd
-	x_sd = sd(x)
-  x = x/x_sd
-	c_orig = c
-  c = c/x_sd
+  x_sd = sd(x)
+  y = y/y_sd
+	x = x/x_sd
+	c = c/x_sd
 	
   #x_sd = sd(x)
   #x_iq = quantile(x,.75, type=6) - quantile(x,.25, type=6)
   x_iq = quantile(x,.75,type=2) - quantile(x,.25,type=2)
   
-  X_l = x[x<c];   
-  x_l_min = min(X_l)
-  x_l_max = max(X_l)
-  range_l = abs(c-x_l_min)
-  X_r = x[x>=c]
-  x_r_min = min(X_r)
-  x_r_max = max(X_r)
-  range_r = abs(c-x_r_max)
+  X_l = x[x<c];   X_r = x[x>=c]
+  x_l_min = min(X_l);  x_l_max = max(X_l)
+  x_r_min = min(X_r);  x_r_max = max(X_r)
+  range_l = abs(c-x_l_min);  range_r = abs(c-x_r_max)
 
   Y_l = y[x<c];    Y_r = y[x>=c]
   N_l = length(X_l);   N_r = length(X_r)

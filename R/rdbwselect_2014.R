@@ -9,7 +9,7 @@ rdbwselect_2014 = function(y, x, subset = NULL, c=0, p=1, q=2, deriv=0, rho=NULL
   x <- x[na.ok]
   y <- y[na.ok]
   
-  b_calc = 0
+  b_calc = 0 
   
   if (is.null(rho)){
     b_calc = 1

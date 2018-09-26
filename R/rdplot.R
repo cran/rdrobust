@@ -384,36 +384,39 @@ rdplot = function(y, x, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kern
   
   rdplot_mean_bin_l=rdplot_mean_x_l=rdplot_mean_y_l=rep(0,J_star_l)
 	rdplot_mean_bin_r=rdplot_mean_x_r=rdplot_mean_y_r=rep(0,J_star_r)
-  	for (k in 1:(J_star_l)) {
-	  rdplot_mean_bin_l[k]=mean(c(jumps_l[k],jumps_l[k+1]))
-	  rdplot_mean_x_l[k]=mean(x_l[bin_x_l==-k])
-	  rdplot_mean_y_l[J_star_l-k+1]=mean(y_l[bin_x_l==-k])
-  	}
+  
+	for (k in 1:(J_star_l)) {
+	  rdplot_mean_bin_l[k]          = mean(c(jumps_l[k],jumps_l[k+1]))
+	  rdplot_mean_x_l[k]            = mean(x_l[bin_x_l==-k])
+	  rdplot_mean_y_l[k] = mean(y_l[bin_x_l==-k])
+	}
+	
+	rdplot_mean_y_l = rev(rdplot_mean_y_l)
+	rdplot_mean_x_l = rev(rdplot_mean_x_l)
+	
 	for (k in 1:(J_star_r)) {
-	  rdplot_mean_bin_r[k]=mean(c(jumps_r[k],jumps_r[k+1]))
-	  rdplot_mean_x_r[k]=mean(x_r[bin_x_r==k])
-	  rdplot_mean_y_r[k]=mean(y_r[bin_x_r==k]) 
+	  rdplot_mean_bin_r[k]  = mean(c(jumps_r[k],jumps_r[k+1]))
+	  rdplot_mean_x_r[k]    = mean(x_r[bin_x_r==k])
+	  rdplot_mean_y_r[k]    = mean(y_r[bin_x_r==k]) 
 	}
 	
 	rdplot_mean_bin_l[J_star_l]=mean(c(jumps_l[J_star_l],c))
 	rdplot_mean_bin_r[J_star_r]=mean(c(jumps_r[J_star_r],x_max))
   
-  bin_x=c(bin_x_l,bin_x_r)
-  rdplot_mean_bin=c(rdplot_mean_bin_l,rdplot_mean_bin_r)
-  rdplot_mean_x=c(rdplot_mean_x_l,rdplot_mean_x_r)
-	rdplot_mean_y=c(rdplot_mean_y_l,rdplot_mean_y_r)
-	#rdplot_cil_bin = rdplot_mean_y 
-	#rdplot_cir_bin = rdplot_mean_y 
+  bin_x = c(bin_x_l,bin_x_r)
+  rdplot_mean_bin = c(rdplot_mean_bin_l, rdplot_mean_bin_r)
+  rdplot_mean_x   = c(rdplot_mean_x_l,   rdplot_mean_x_r)
+	rdplot_mean_y   = c(rdplot_mean_y_l,   rdplot_mean_y_r)
 	
 	rdplot_sd_y_l=rdplot_N_l=rdplot_sd_y_r=rdplot_N_r=0
 	for (j in 1:(J_star_l)) {
-	  rdplot_sd_y_l[j]=sd(y_l[bin_x_l==-j])
-	  rdplot_N_l[j]=length(y_l[bin_x_l==-j])
+	  rdplot_sd_y_l[j] =     sd(y_l[bin_x_l==-j])
+	  rdplot_N_l[j]    = length(y_l[bin_x_l==-j])
 	}
 	
 	for (j in 1:(J_star_r)) {
-	  rdplot_sd_y_r[j]=sd(y_r[bin_x_r==j])
-	  rdplot_N_r[j]=length(y_r[bin_x_r==j])
+	  rdplot_sd_y_r[j] =     sd(y_r[bin_x_r==j])
+	  rdplot_N_r[j]    = length(y_r[bin_x_r==j])
 	}
 	
 	rdplot_sd_y_l[is.na(rdplot_sd_y_l)]=0
@@ -441,8 +444,6 @@ rdplot = function(y, x, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kern
     par=par
     if (flag_no_ci==TRUE) {
       plot(rdplot_mean_bin,rdplot_mean_y, main=title, xlab=x.label, ylab=y.label, ylim=y.lim, xlim=x.lim, col=col.dots, pch=type.dots,...)
-  	  #points(x_l[order(x_l)],mu0_p1_l[order(x_l)],type="l",col=2) 
-  	  #points(x_r[order(x_r)],mu0_p1_r[order(x_r)],type="l",col=2)  
       lines(x_plot_l,y_hat_l,type="l",col=col.lines) 
       lines(x_plot_r,y_hat_r,type="l",col=col.lines) 
       abline(v=c)
@@ -468,17 +469,18 @@ rdplot = function(y, x, c=0, p=4, nbins=NULL, binselect="esmv", scale=NULL, kern
   	rdplot_max_bin = cutoffs[2:length(cutoffs)]
 	
   	bin_length = rdplot_max_bin-rdplot_min_bin
-  	bin_avg_l = mean(bin_length[1:J_star_l])
+  	bin_avg_l =   mean(bin_length[1:J_star_l])
   	bin_med_l = median(bin_length[1:J_star_l])
   	
-  	bin_avg_r = mean(bin_length[(J_star_l+1):length(bin_length)])
+  	bin_avg_r =   mean(bin_length[(J_star_l+1):length(bin_length)])
   	bin_med_r = median(bin_length[(J_star_l+1):length(bin_length)])
  
-  	vars=data.frame("rdplot_mean_bin"=rdplot_mean_bin,"rdplot_mean_x"=rdplot_mean_x, "rdplot_mean_y"=rdplot_mean_y, "rdplot_min_bin"=rdplot_min_bin, "rdplot_max_bin"=rdplot_max_bin, "rdplot_se_y"=rdplot_se_y, "rdplot_N"=rdplot_N, "rdplot_ci_l"=rdplot_cil_bin, "rdplot_ci_r"=rdplot_cir_bin)
+  	vars_bins = data.frame("rdplot_mean_bin"=rdplot_mean_bin,"rdplot_mean_x"=rdplot_mean_x, "rdplot_mean_y"=rdplot_mean_y, "rdplot_min_bin"=rdplot_min_bin, "rdplot_max_bin"=rdplot_max_bin, "rdplot_se_y"=rdplot_se_y, "rdplot_N"=rdplot_N, "rdplot_ci_l"=rdplot_cil_bin, "rdplot_ci_r"=rdplot_cir_bin)
+    vars_poly = data.frame("rdplot_x"= c(x_plot_l, x_plot_r), "rdplot_y"= c(y_hat_l, y_hat_r))
     
     coef = cbind(gamma_p1_l,gamma_p1_r)
     colnames(coef)=c("Left","Right")
-    out=list(coef=coef, genvars=vars, 
+    out=list(coef=coef, vars_bins=vars_bins, vars_poly=vars_poly,
              J=c(J_star_l,J_star_r), J_IMSE=J_IMSE, J_MV=J_MV, 
              scale=c(scale_l,scale_r), rscale=c(rscale_l,rscale_r),
              bin_avg=c(bin_avg_l,bin_avg_r), bin_med=c(bin_med_l,bin_med_r),
@@ -495,11 +497,11 @@ print.rdplot <- function(x,...){
   cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
   cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
   cat("\n")
-  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1],     width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$N[2], width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$Nh[1],   width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$Nh[2], width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Order poly. fit (p)      ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("BW poly. fit (h)         ",  format(sprintf("%9.3f",x$h[1], width=10, justify="right")),  "      ", format(sprintf("%9.3f",x$h[2], width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Number of bins scale     ",  format(sprintf("%9.0f",x$scale[1], width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$scale[2], width=10, justify="right")),    "\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1],     width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$N[2],     width=10, justify="right")), "\n", sep=""))
+  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$Nh[1],    width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$Nh[2],    width=10, justify="right")), "\n", sep=""))
+  cat(paste("Order poly. fit (p)      ",  format(sprintf("%9.0f",x$p,        width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$p,        width=10, justify="right")), "\n", sep=""))
+  cat(paste("BW poly. fit (h)         ",  format(sprintf("%9.3f",x$h[1],     width=10, justify="right")),  "      ", format(sprintf("%9.3f",x$h[2],     width=10, justify="right")), "\n", sep=""))
+  cat(paste("Number of bins scale     ",  format(sprintf("%9.0f",x$scale[1], width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$scale[2], width=10, justify="right")), "\n", sep=""))
   cat("\n")
 }
 

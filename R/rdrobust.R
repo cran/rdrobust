@@ -305,11 +305,11 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
   if (!is.null(fuzzy)) {
      tau_T_cl = factorial(deriv)*beta_p[(deriv+1),2]
      tau_T_bc = factorial(deriv)*beta_bc[(deriv+1),2]
-     tau_cl = tau_Y_cl/tau_T_cl
-     s_Y = c(1/tau_T_cl , -(tau_Y_cl/tau_T_cl^2))
-     B_F = c(tau_Y_cl-tau_Y_bc , tau_T_cl-tau_T_bc)
-     tau_bc = tau_cl - t(s_Y)%*%B_F
-     sV_T = c(0 , 1)
+     tau_cl   = tau_Y_cl/tau_T_cl
+     s_Y      = c(1/tau_T_cl , -(tau_Y_cl/tau_T_cl^2))
+     B_F      = c(tau_Y_cl-tau_Y_bc , tau_T_cl-tau_T_bc)
+     tau_bc   = tau_cl - t(s_Y)%*%B_F
+     sV_T     = c(0 , 1)
      
      tau_T_cl_l = factorial(deriv)*beta_p_l[(deriv+1),2]
      tau_T_cl_r = factorial(deriv)*beta_p_l[(deriv+1),2]
@@ -319,7 +319,6 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
      B_F_r = c(tau_Y_cl_r-tau_Y_bc_r, tau_T_cl_r-tau_T_bc_r)
      bias_l = t(s_Y)%*%B_F_l
 		 bias_r = t(s_Y)%*%B_F_r
-     
   }	
   } else {	
     ZWD_p_l  = crossprod(eZ_l*W_h_l,D_l)
@@ -337,30 +336,29 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
     s_Y = c(1 ,  -gamma_p[,1])
     
     
-    
     if (is.null(fuzzy)) {
-        tau_cl = t(s_Y)%*%beta_p[(deriv+1),]
-        tau_bc = t(s_Y)%*%beta_bc[(deriv+1),]
+        tau_cl = scalepar*t(s_Y)%*%beta_p[(deriv+1),]
+        tau_bc = scalepar*t(s_Y)%*%beta_bc[(deriv+1),]
         
-        tau_Y_cl_l = t(s_Y)%*%beta_p_l[(deriv+1),]
-        tau_Y_cl_r = t(s_Y)%*%beta_p_r[(deriv+1),]
-        tau_Y_bc_l = t(s_Y)%*%beta_bc_l[(deriv+1),]
-        tau_Y_bc_r = t(s_Y)%*%beta_bc_r[(deriv+1),]
+        tau_Y_cl_l = scalepar*t(s_Y)%*%beta_p_l[(deriv+1),]
+        tau_Y_cl_r = scalepar*t(s_Y)%*%beta_p_r[(deriv+1),]
+        tau_Y_bc_l = scalepar*t(s_Y)%*%beta_bc_l[(deriv+1),]
+        tau_Y_bc_r = scalepar*t(s_Y)%*%beta_bc_r[(deriv+1),]
         bias_l = tau_Y_cl_l-tau_Y_bc_l
         bias_r = tau_Y_cl_r-tau_Y_bc_r 
 
     } else {
       s_T  = c(1,    -gamma_p[,2])
       sV_T = c(0, 1, -gamma_p[,2])
-      tau_Y_cl = factorial(deriv)*t(s_Y)%*%c(beta_p[(deriv+1),1], beta_p[(deriv+1),colsZ])
+      tau_Y_cl = scalepar*factorial(deriv)*t(s_Y)%*%c(beta_p[(deriv+1),1], beta_p[(deriv+1),colsZ])
       tau_T_cl = factorial(deriv)*t(s_T)%*%c(beta_p[(deriv+1),2], beta_p[(deriv+1),colsZ])
-      tau_Y_bc = factorial(deriv)*t(s_Y)%*%c(beta_bc[(deriv+1),1],beta_bc[(deriv+1),colsZ])
+      tau_Y_bc = scalepar*factorial(deriv)*t(s_Y)%*%c(beta_bc[(deriv+1),1],beta_bc[(deriv+1),colsZ])
       tau_T_bc = factorial(deriv)*t(s_T)%*%c(beta_bc[(deriv+1),2],beta_bc[(deriv+1),colsZ])
 
-      tau_Y_cl_l = factorial(deriv)*t(s_Y)%*%c(beta_p_l[(deriv+1),1], beta_p_l[(deriv+1),colsZ])
-      tau_Y_cl_r = factorial(deriv)*t(s_Y)%*%c(beta_p_r[(deriv+1),2], beta_p_r[(deriv+1),colsZ])
-      tau_Y_bc_l = factorial(deriv)*t(s_Y)%*%c(beta_bc_l[(deriv+1),1],beta_bc_l[(deriv+1),colsZ])
-      tau_Y_bc_r = factorial(deriv)*t(s_Y)%*%c(beta_bc_r[(deriv+1),2],beta_bc_r[(deriv+1),colsZ])
+      tau_Y_cl_l = scalepar*factorial(deriv)*t(s_Y)%*%c(beta_p_l[(deriv+1),1], beta_p_l[(deriv+1),colsZ])
+      tau_Y_cl_r = scalepar*factorial(deriv)*t(s_Y)%*%c(beta_p_r[(deriv+1),2], beta_p_r[(deriv+1),colsZ])
+      tau_Y_bc_l = scalepar*factorial(deriv)*t(s_Y)%*%c(beta_bc_l[(deriv+1),1],beta_bc_l[(deriv+1),colsZ])
+      tau_Y_bc_r = scalepar*factorial(deriv)*t(s_Y)%*%c(beta_bc_r[(deriv+1),2],beta_bc_r[(deriv+1),colsZ])
 
       tau_T_cl_l = factorial(deriv)*t(s_T)%*%c(beta_p_l[(deriv+1),1], beta_p_l[(deriv+1),colsZ])
       tau_T_cl_r = factorial(deriv)*t(s_T)%*%c(beta_p_r[(deriv+1),2], beta_p_r[(deriv+1),colsZ])
@@ -411,9 +409,9 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
 	V_Y_cl_r = invG_p_r%*%rdrobust_vce(dT+dZ, s_Y, R_p_r*W_h_r, res_h_r, eC_r)%*%invG_p_r
 	V_Y_rb_l = invG_p_l%*%rdrobust_vce(dT+dZ, s_Y, Q_q_l,       res_b_l, eC_l)%*%invG_p_l
 	V_Y_rb_r = invG_p_r%*%rdrobust_vce(dT+dZ, s_Y, Q_q_r,       res_b_r, eC_r)%*%invG_p_r
-	V_tau_cl = factorial(deriv)^2*(V_Y_cl_l+V_Y_cl_r)[deriv+1,deriv+1]
-	V_tau_rb = factorial(deriv)^2*(V_Y_rb_l+V_Y_rb_r)[deriv+1,deriv+1]
-	se_tau_cl = scalepar*sqrt(V_tau_cl);	se_tau_rb = scalepar*sqrt(V_tau_rb)
+	V_tau_cl = scalepar^2*factorial(deriv)^2*(V_Y_cl_l+V_Y_cl_r)[deriv+1,deriv+1]
+	V_tau_rb = scalepar^2*factorial(deriv)^2*(V_Y_rb_l+V_Y_rb_r)[deriv+1,deriv+1]
+	se_tau_cl = sqrt(V_tau_cl);	se_tau_rb = sqrt(V_tau_rb)
 
 	if (!is.null(fuzzy)) {
 		V_T_cl_l = invG_p_l%*%rdrobust_vce(dT+dZ, sV_T, R_p_l*W_h_l, res_h_l, eC_l)%*%invG_p_l
@@ -427,31 +425,31 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
   
   tau = c(tau_cl, tau_bc, tau_bc)
   se  = c(se_tau_cl,se_tau_cl,se_tau_rb)
-  t  =  tau/se
-  pv = 2*pnorm(-abs(t))
-  ci = matrix(NA,nrow=3,ncol=2)
-  rownames(ci)=c("Conventional","Bias-Corrected","Robust")
-  colnames(ci)=c("Lower","Upper")
+  t   =  tau/se
+  pv  = 2*pnorm(-abs(t))
+  ci  = matrix(NA,nrow=3,ncol=2)
+  rownames(ci) = c("Conventional","Bias-Corrected","Robust")
+  colnames(ci) = c("Lower","Upper")
   ci[1,] = c(tau[1] - quant*se[1], tau[1] + quant*se[1])
   ci[2,] = c(tau[2] - quant*se[2], tau[2] + quant*se[2])
   ci[3,] = c(tau[3] - quant*se[3], tau[3] + quant*se[3])
     
   if (!is.null(fuzzy)) {  
       tau_T = c(tau_T_cl, tau_T_bc, tau_T_bc)
-      se_T = c(se_tau_T_cl, se_tau_T_cl, se_tau_T_rb)
-      t_T = tau_T/se_T
-      pv_T = 2*pnorm(-abs(t_T))
-      ci_T=matrix(NA,nrow=3,ncol=2)
+      se_T  = c(se_tau_T_cl, se_tau_T_cl, se_tau_T_rb)
+      t_T   = tau_T/se_T
+      pv_T  = 2*pnorm(-abs(t_T))
+      ci_T  = matrix(NA,nrow=3,ncol=2)
       ci_T[1,] = c(tau_T[1] - quant*se_T[1], tau_T[1] + quant*se_T[1])
       ci_T[2,] = c(tau_T[2] - quant*se_T[2], tau_T[2] + quant*se_T[2])
       ci_T[3,] = c(tau_T[3] - quant*se_T[3], tau_T[3] + quant*se_T[3])
   }
 
-    coef=matrix(tau,3,1)
-    se  =matrix(se,3,1)
-    z   =matrix(t,3,1)
-    pv  =matrix(pv,3,1)
-    ci=ci
+    coef = matrix(tau,3,1)
+    se   = matrix(se, 3,1)
+    z    = matrix(t,  3,1)
+    pv   = matrix(pv, 3,1)
+    ci   = ci
 
   bws=matrix(c(h_l,b_l,h_r,b_r),2,2)
   colnames(bws)=c("left","right")
@@ -475,7 +473,7 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
            V_cl_l=V_Y_cl_l, V_cl_r=V_Y_cl_r, V_rb_l=V_Y_rb_l, V_rb_r=V_Y_rb_r,
            N=c(N_l,N_r), Nh=c(N_h_l,N_h_r), Nb=c(N_b_l,N_b_r),
            tau_cl=c(tau_Y_cl_l,tau_Y_cl_r), tau_bc=c(tau_Y_bc_l,tau_Y_bc_r),
-           c=c, p=p, q=q, bias=c(bias_l,bias_r), kernel=kernel_type, 
+           c=c, p=p, q=q, bias=c(bias_l,bias_r), kernel=kernel_type, all=all,
            vce=vce_type, bwselect=bwselect, level=level)
   out$call <- match.call()
   class(out) <- "rdrobust"
@@ -563,7 +561,6 @@ summary.rdrobust <- function(object,...) {
     cat(format(paste(sprintf("%3.3f", CI_us_r[1]), "]", sep=""), width=11, justify="left"))
     cat("\n")
     
-    #if (is.null(args[['all']])) {
     if (is.null(x$all)) {
       cat(format("Robust", width=14, justify="right"))
       cat(format("-", width=10, justify="right"))

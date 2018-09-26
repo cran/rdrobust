@@ -69,13 +69,22 @@ If not specified, the bandwidths are chosen to span the full support of the data
 }
 \value{
   \item{binselect}{method used to compute the optimal number of bins.}
-  \item{N_l}{sample size used to the left of the cutoff.}
-  \item{N_r}{sample size used to the right of the cutoff.}
+  \item{N}{sample sizes used to the left and right of the cutoff.}
+  \item{Nh}{effective sample sizes used to the left and right of the cutoff.}
   \item{c}{cutoff value.}
-  \item{J_star_l}{selected number of bins to the left of the cutoff.}
-  \item{J_star_r}{selected number of bins to the right of the cutoff.}
+  \item{p}{order of the global polynomial used.}
+  \item{h}{bandwidth used to the left and right of the cutoff.}
+  \item{kernel}{kernel used.}
+  \item{J}{selected number of bins to the left and right of the cutoff.}
+  \item{J_IMSE}{IMSE optimal number of bins to the left and right of the cutoff.}
+  \item{J_MV}{Mimicking variance number of bins to the left and right of the cutoff.}
   \item{coef}{matrix containing the coefficients of the \eqn{p^{th}} order global polynomial estimated both sides of the cutoff.}
-  \item{genvars}{data frame containing the variables used to construct the bins: bin id, cutoff values, mean of x and y within each bin, cutoff points and confidence interval bounds.}
+  \item{vars_bins}{data frame containing the variables used to construct the bins: bin id, cutoff values, mean of x and y within each bin, cutoff points and confidence interval bounds.}
+  \item{vars_poly}{data frame containing the variables used to construct the global polynomial plot.}
+  \item{scale}{selected scale value.}
+  \item{rscale}{implicit scale value.}
+  \item{bin_avg}{average bin length.}
+  \item{bin_med}{median bin length.}
 }
 \references{
 Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}{rdrobust: Software for Regression Discontinuity Designs.} \emph{Stata Journal} 17(2): 372-404. 
