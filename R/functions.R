@@ -365,3 +365,23 @@ regconst = function(d,h){
   invXX =solve(XX)
   return(invXX)
 }
+
+covs_drop_fun <- function(z) {
+  z          <- as.matrix(z)
+  ncovs      <- ncol(z)
+  df         <- data.frame(z = z)
+  constant   <- rep(1,nrow(df))
+  tmp        <- lm(constant ~ ., data=df)
+  to_keep    <- tmp$coefficients[!is.na(tmp$coefficients)]
+  ncovs_keep <- length(to_keep)
+  to_keep    <- names(to_keep[2:ncovs_keep])
+  ncovs_keep <- ncovs_keep-1
+  covs <- as.matrix(df[to_keep])
+  #qr.X <- qr(x,  LAPACK = FALSE, tol = 1e-2) 
+  #(rnkX <- qr.X$rank)
+  #(keep <- qr.X$pivot[seq_len(rnkX)])
+  #xx <- as.matrix(x[,keep])
+  #output = list(xx=xx,rank_covs=rnkX)
+  output = list(covs=covs, ncovs=ncovs_keep)
+  return(output)
+}

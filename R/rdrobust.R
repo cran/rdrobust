@@ -1,7 +1,10 @@
-rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=NULL, b=NULL, rho=NULL, covs=NULL, 
-                    kernel="tri", weights=NULL, bwselect="mserd", 
-                    vce="nn", cluster=NULL, nnmatch=3, level=95, scalepar=1, scaleregul=1, sharpbw=FALSE, 
-                    all=NULL, subset = NULL) {
+rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,  
+                    p = NULL, q = NULL, h = NULL, b = NULL, rho = NULL, 
+                    covs = NULL, covs_drop = TRUE,
+                    kernel = "tri", weights = NULL, bwselect = "mserd",
+                    vce = "nn", cluster = NULL, nnmatch = 3, level = 95, 
+                    scalepar = 1, scaleregul = 1, sharpbw = FALSE, 
+                    all = NULL, subset = NULL, masspoints = "adjust", bwcheck = NULL) {
   
   if (!is.null(subset)) {
     x <- x[subset]
@@ -70,7 +73,9 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
   if (!is.null(cluster)) cluster = as.matrix(cluster[na.ok])
   if (!is.null(weights)) weights = as.matrix(weights[na.ok])
   
-  if (vce=="nn") {
+  if (is.null(masspoints)) masspoints=FALSE
+
+  if (vce=="nn" | masspoints=="check" |masspoints=="adjust") {
     order_x = order(x)
     x = x[order_x,,drop=FALSE]
     y = y[order_x,,drop=FALSE]
@@ -84,8 +89,8 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
   bwselect = tolower(bwselect)
   vce      = tolower(vce)
   
-  X_l=x[x<c,,drop=FALSE];  X_r=x[x>=c,,drop=FALSE]
-  Y_l=y[x<c,,drop=FALSE];  Y_r=y[x>=c,,drop=FALSE]
+  X_l = x[x<c,,drop=FALSE];  X_r = x[x>=c,,drop=FALSE]
+  Y_l = y[x<c,,drop=FALSE];  Y_r = y[x>=c,,drop=FALSE]
   x_min = min(x);  x_max = max(x)
   range_l = abs(max(X_l)-min(X_l));   range_r = abs(max(X_r)-min(X_r))
   N_l = length(X_l);   N_r = length(X_r)
@@ -98,7 +103,24 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
   if (vce=="hc2")         vce_type = "HC2"
   if (vce=="hc3")      	  vce_type = "HC3"
   if (!is.null(cluster))	vce_type = "Cluster"
+
   
+  ############## COLLINEARITY
+  covs_drop_coll=NULL
+  if (!is.null(covs)) {
+    dZ = ncol(covs)
+    covs.check = covs_drop_fun(covs)
+    if (covs.check$ncovs < dZ & covs_drop==FALSE) {
+      print("Multicollinearity issue detected in covs. Please rescale and/or remove redundant covariates, or use covs_drop option.")  
+    }
+    if (covs.check$ncovs < dZ & isTRUE(covs_drop)) {
+      covs  <- covs.check$covs
+      dZ <- covs.check$ncovs
+      covs_drop_coll <-1
+      print("Multicollinearity issue detected in covs. Redundant covariates dropped.")  
+    }
+  }
+
   #####################################################   CHECK ERRORS
   exit=0
   if (kernel!="uni" & kernel!="uniform" & kernel!="tri" & kernel!="triangular" & kernel!="epa" & kernel!="epanechnikov" & kernel!="" ){
@@ -162,14 +184,34 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
   if (vce=="cluster")  	  vce_type = "Cluster"
   if (vce=="nncluster") 	vce_type = "NNcluster"
   
+  
+  mN = N
+  M_l = N_l
+  M_r = N_r
+  if (masspoints=="check" | masspoints=="adjust") {
+    X_uniq_l = sort(unique(X_l), decreasing=TRUE)
+    X_uniq_r = unique(X_r)
+    M_l = length(X_uniq_l)
+    M_r = length(X_uniq_r)
+    M = M_l + M_r
+    mass_l = 1-M_l/N_l
+    mass_r = 1-M_r/N_r				
+    if (mass_l>=0.1 | mass_r>=0.1){
+      print("Mass points detected in the running variable.")
+      if (masspoints=="check") print("Try using option masspoints=adjust.")
+      if (is.null(bwcheck) & masspoints=="adjust") bwcheck <- 10
+    }				
+  }
+		
+		
     ############################################################################################
     #print("Preparing data.") 
     
     if (is.null(h)) {
-      rdbws=rdbwselect(y=y, x=x, c=c, fuzzy=fuzzy,  deriv=deriv, p=p, q=q, covs=covs, 
-                       kernel=kernel,  weights=weights, bwselect=bwselect,  
+      invisible(capture.output( rdbws<- rdbwselect(y=y, x=x, c=c, fuzzy=fuzzy,  deriv=deriv, p=p, q=q, covs=covs, 
+                       kernel=kernel,  weights=weights, bwselect=bwselect,  bwcheck = bwcheck,
                        vce=vce, cluster=cluster,  nnmatch=nnmatch,  scaleregul=scaleregul,
-                       sharpbw = sharpbw, subset=subset)
+                       sharpbw = sharpbw, subset=subset, masspoints=masspoints)))
       h_l = c(rdbws$bws[1]); b_l = c(rdbws$bws[3])
       h_r = c(rdbws$bws[2]); b_r = c(rdbws$bws[4])
       
@@ -471,10 +513,10 @@ rdrobust = function(y, x, c = NULL, fuzzy=NULL, deriv=NULL,  p=NULL, q=NULL, h=N
   out=list(Estimate=Estimate, bws=bws, coef=coef, se=se, z=z, pv=pv, ci=ci,
            beta_p_l=beta_p_l, beta_p_r=beta_p_r,
            V_cl_l=V_Y_cl_l, V_cl_r=V_Y_cl_r, V_rb_l=V_Y_rb_l, V_rb_r=V_Y_rb_r,
-           N=c(N_l,N_r), Nh=c(N_h_l,N_h_r), Nb=c(N_b_l,N_b_r),
+           N=c(N_l,N_r), N_h=c(N_h_l,N_h_r), N_b=c(N_b_l,N_b_r), M=c(M_l,M_r),
            tau_cl=c(tau_Y_cl_l,tau_Y_cl_r), tau_bc=c(tau_Y_bc_l,tau_Y_bc_r),
            c=c, p=p, q=q, bias=c(bias_l,bias_r), kernel=kernel_type, all=all,
-           vce=vce_type, bwselect=bwselect, level=level)
+           vce=vce_type, bwselect=bwselect, level=level, masspoints=masspoints)
   out$call <- match.call()
   class(out) <- "rdrobust"
   return(out)
@@ -489,13 +531,13 @@ print.rdrobust <- function(x,...){
   cat(paste("VCE method               ",  format(x$vce,      width=10, justify="right"),"\n", sep=""))
   cat("\n")
   cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$Nh[1],width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$Nh[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$N_h[1],width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N_h[2],width=10, justify="right")),        "\n", sep=""))
   cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("Order bias  (p)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("Order bias  (q)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
   cat(paste("BW est. (h)              ",  format(sprintf("%9.3f",x$bws[1,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2],  width=10, justify="right")),       "\n", sep=""))
   cat(paste("BW bias (b)              ",  format(sprintf("%9.3f",x$bws[2,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
   cat(paste("rho (h/b)                ",  format(sprintf("%9.3f",x$bws[1,1]/x$bws[2,1],width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2]/x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
-  
+  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ",  format(sprintf("%9.0f",x$M[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$M[2],width=10, justify="right")),        "\n", sep=""))
   cat("\n")
   #cat(paste(format(sprintf("%9.3f",x$bws,"\n", sep="")))) 
 }
@@ -512,12 +554,13 @@ summary.rdrobust <- function(object,...) {
   cat(paste("VCE method               ",  format(x$vce,      width=10, justify="right"),"\n", sep=""))
   cat("\n")
   cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$Nh[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$Nh[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$N_h[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$N_h[2],width=10, justify="right")),        "\n", sep=""))
   cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("Order bias  (p)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("Order bias  (q)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
   cat(paste("BW est. (h)              ",  format(sprintf("%9.3f",x$bws[1,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2],  width=10, justify="right")),       "\n", sep=""))
   cat(paste("BW bias (b)              ",  format(sprintf("%9.3f",x$bws[2,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
   cat(paste("rho (h/b)                ",  format(sprintf("%9.3f",x$bws[1,1]/x$bws[2,1],    width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2]/x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
+  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ",  format(sprintf("%9.0f",x$M[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$M[2],width=10, justify="right")),        "\n", sep=""))
   cat("\n")
 
   ### compute CI

@@ -1,6 +1,9 @@
-rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, covs = NULL,  
-                      kernel="tri", weights=NULL, bwselect="mserd", vce="nn", cluster = NULL, 
-                      nnmatch=3,  scaleregul=1, sharpbw=FALSE,  all=NULL, subset = NULL){
+rdbwselect = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL, p = NULL, q = NULL, 
+                      covs = NULL,  covs_drop = TRUE,  
+                      kernel = "tri", weights = NULL, bwselect = "mserd", 
+                      vce = "nn", cluster = NULL, 
+                      nnmatch = 3,  scaleregul = 1, sharpbw = FALSE,  
+                      all = NULL, subset = NULL, masspoints = "adjust", bwcheck = NULL){
   
   if (!is.null(subset)) { 
     x <- x[subset]
@@ -69,8 +72,9 @@ rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, co
   if (!is.null(cluster)) cluster = as.matrix(cluster[na.ok])
   if (!is.null(weights)) weights = as.matrix(weights[na.ok])
   
+  if (is.null(masspoints)) masspoints=FALSE
   
-  if (vce=="nn") {
+  if (vce=="nn" | masspoints=="check" | masspoints=="adjust") {
     order_x = order(x)
     x = x[order_x,,drop=FALSE]
     y = y[order_x,,drop=FALSE]
@@ -102,6 +106,39 @@ rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, co
   x_min=min(x);  x_max=max(x)
   N = N_r + N_l
 
+  M_l = N_l
+  M_r = N_r
+  if (masspoints=="check" | masspoints=="adjust") {
+    X_uniq_l = sort(unique(X_l), decreasing=TRUE)
+    X_uniq_r = unique(X_r)
+    M_l = length(X_uniq_l)
+    M_r = length(X_uniq_r)
+    M = M_l + M_r
+    mass_l = 1-M_l/N_l
+    mass_r = 1-M_r/N_r				
+    if (mass_l>=0.1 | mass_r>=0.1){
+      print("Mass points detected in the running variable.")
+      if (masspoints=="check") print("Try using option masspoints=adjust.")
+      if (is.null(bwcheck) & masspoints=="adjust") bwcheck <- 10
+    }				
+  }
+  
+  ############## COLLINEARITY
+  covs_drop_coll = NULL
+  if (!is.null(covs)) {
+    dZ = ncol(covs)
+    covs.check = covs_drop_fun(covs)
+    if (covs.check$ncovs < dZ & covs_drop==FALSE) {
+      print("Multicollinearity issue detected in covs. Please rescale and/or remove redundant covariates, or use covs_drop option.")  
+    }
+    if (covs.check$ncovs < dZ & isTRUE(covs_drop)) {
+      covs  <- covs.check$covs
+      dZ    <- covs.check$ncovs
+      covs_drop_coll <-1
+      print("Multicollinearity issue detected in covs. Redundant covariates dropped.")  
+    }
+  }
+  
     exit=0
     #################  ERRORS
     if (kernel!="uni" & kernel!="uniform" & kernel!="tri" & kernel!="triangular" & kernel!="epa" & kernel!="epanechnikov" & kernel!="" ){
@@ -172,7 +209,6 @@ rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, co
     if (vce=="hc3")      	  vce_type = "HC3"
     if (vce=="cluster")  	  vce_type = "Cluster"
     if (vce=="nncluster") 	vce_type = "NNcluster"
-
     
   #***********************************************************************
   dZ=Z_l=Z_r=T_l=T_r=C_l=C_r=Cind_l=Cind_r=g_l=g_r=NULL
@@ -222,74 +258,68 @@ rdbwselect = function(y, x, c=NULL, fuzzy = NULL, deriv=NULL, p=NULL, q=NULL, co
   }                                                                           
     #***********************************************************************
     c_bw = C_c*min(c(1,x_iq/1.349))*N^(-1/5)
-  
+    if (masspoints=="adjust") c_bw = C_c*min(c(1,x_iq/1.349))*M^(-1/5)
+    
+    bw.adj <- 0
+    if (!is.null(bwcheck)) {
+      bwcheck_l = min(bwcheck, M_l)
+			bwcheck_r = min(bwcheck, M_r)
+      bw_min_l = abs(X_uniq_l-c)[bwcheck_l] + 1e-8
+      bw_min_r = abs(X_uniq_r-c)[bwcheck_r] + 1e-8
+      c_bw = max(c_bw, bw_min_l, bw_min_r)
+      bw.adj <- 1
+    }
+    
     #*** Step 1: d_bw
     C_d_l = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q+1, nu=q+1, o_B=q+2, h_V=c_bw, h_B=range_l, 0, vce, nnmatch, kernel, dups_l, dupsid_l)
     C_d_r = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q+1, nu=q+1, o_B=q+2, h_V=c_bw, h_B=range_r, 0, vce, nnmatch, kernel, dups_r, dupsid_r)
-  
-    #if (C_d_l$V=="NaN" | C_d_l$B=="NaN" | C_d_l$R=="NaN") C_d_l = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, c=c, o=q+1, nu=q+1, o_B=q+2, h_V=c_bw, h_B=c_bw, 0, vce, nnmatch, kernel, dups_l, dupsid_l)
-    #if (C_d_r$V=="NaN" | C_d_r$B=="NaN" | C_d_r$R=="NaN") C_d_r = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, c=c, o=q+1, nu=q+1, o_B=q+2, h_V=c_bw, h_B=c_bw, 0, vce, nnmatch, kernel, dups_r, dupsid_r)
-    #if (C_d_l$V==. | C_d_l$B==. | C_d_l$R==.) display("Invertibility problem in the computation of preliminary bandwidth below the threshold")  
-    #if (C_d_r$V==. | C_d_r$B==. | C_d_r$R==.) display("Invertibility problem in the computation of preliminary bandwidth above the threshold")  
-    #if (C_d_l$V==0 | C_d_l$B==0) display("Not enough variability to compute the preliminary bandwidth below the threshold. Range defined by bandwidth: ")  
-    #if (C_d_r$V==0 | C_d_r$B==0) display("Not enough variability to compute the preliminary bandwidth above the threshold. Range defined by bandwidth: ")  
- 
+    #if (C_d_l$V==. | C_d_l$B==. | C_d_l$R==. | C_d_r$V==. | C_d_r$B==. | C_d_r$R==. |C_d_l$V==0 | C_d_l$B==0 | C_d_r$V==0 | C_d_r$B==0) display("Not enough variability to compute the preliminary bandwidt. Try checking for mass points with option masspoints=check.")  
+
     #*** TWO
     if  (bwselect=="msetwo" |  bwselect=="certwo" | bwselect=="msecomb2" | bwselect=="cercomb2"  | all=="TRUE")  {		
       d_bw_l = c((  C_d_l$V              /   C_d_l$B^2             )^C_d_l$rate)
       d_bw_r = c((  C_d_r$V              /   C_d_r$B^2             )^C_d_l$rate)
+      if (!is.null(bwcheck)) {
+        d_bw_l  <- max(d_bw_l, bw_min_l)
+        d_bw_r  <- max(d_bw_r, bw_min_r)
+      }
       C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_l, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
       b_bw_l = c((  C_b_l$V              /   (C_b_l$B^2 + scaleregul*C_b_l$R)        )^C_b_l$rate)
       C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_r, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
       b_bw_r = c((  C_b_r$V              /   (C_b_r$B^2 + scaleregul*C_b_r$R)        )^C_b_l$rate)
+
       C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_l, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
       h_bw_l = c((  C_h_l$V              /   (C_h_l$B^2 + scaleregul*C_h_l$R)         )^C_h_l$rate)
       C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_r, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
       h_bw_r = c((  C_h_r$V              /   (C_h_r$B^2 + scaleregul*C_h_r$R)         )^C_h_l$rate)
-                  
-      #if (C_b_l$V==0 | C_b_l$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) below the threshold. Range defined by bandwidth = %f\n", d_bw_l)  
-      #if (C_b_r$V==0 | C_b_r$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) above the threshold. Range defined by bandwidth = %f\n", d_bw_r)  
-      #if (C_h_l$V==0 | C_h_l$B==0) printf("{err}Not enough variability to compute the loc. poly. bandwidth (h) below the threshold. Range defined by bandwidth = %f\n", b_bw_l) 
-      #if (C_h_r$V==0 | C_h_r$B==0) printf("{err}Not enough variability to compute the loc. poly. bandwidth (h) above the threshold. Range defined by bandwidth = %f\n", b_bw_r) 
     }
   
 #  *** SUM
   if  (bwselect=="msesum" | bwselect=="cersum" |  bwselect=="msecomb1" | bwselect=="msecomb2" |  bwselect=="cercomb1" | bwselect=="cercomb2"  |  all=="TRUE")  {
     d_bw_s = c(( (C_d_l$V + C_d_r$V)  /  (C_d_r$B + C_d_l$B)^2 )^C_d_l$rate)
+    if (!is.null(bwcheck)) d_bw_s  <-  max(d_bw_s, bw_min_l, bw_min_r)
     C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_s, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
     C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_s, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
     b_bw_s = c(( (C_b_l$V + C_b_r$V)  /  ((C_b_r$B + C_b_l$B)^2 + scaleregul*(C_b_r$R+C_b_l$R)) )^C_b_l$rate)
     C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_s, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
     C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_s, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
     h_bw_s = c(( (C_h_l$V + C_h_r$V)  /  ((C_h_r$B + C_h_l$B)^2 + scaleregul*(C_h_r$R + C_h_l$R)) )^C_h_l$rate)
-
-    #if (C_b_l$V==0 | C_b_l$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) below the threshold. Range defined by bandwidth = %f\n", d_bw_s)  
-    #if (C_b_r$V==0 | C_b_r$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) above the threshold. Range defined by bandwidth = %f\n", d_bw_s)  
-    #if (C_h_l$V==0 | C_h_l$B==0) printf("{err}Not enough variability to compute the loc. poly. bandwidth (h) below the threshold. Range defined by bandwidth = %f\n", b_bw_s) 
-    #if (C_h_r$V==0 | C_h_r$B==0) printf("{err}Not enough variability to compute the loc. poly. bandwidth (h) above the threshold. Range defined by bandwidth = %f\n", b_bw_s) 
 }
 
-    #                     *** RD
+    # *** RD
 if  (bwselect=="mserd" | bwselect=="cerrd" | bwselect=="msecomb1" | bwselect=="msecomb2" | bwselect=="cercomb1" | bwselect=="cercomb2" | bwselect=="" | all=="TRUE" ) {
   d_bw_d = c(( (C_d_l$V + C_d_r$V)  /  (C_d_r$B - C_d_l$B)^2 )^C_d_l$rate)
+  if (!is.null(bwcheck)) d_bw_d  <- max(d_bw_d, bw_min_l, bw_min_r)
   C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
   C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
   b_bw_d = c(( (C_b_l$V + C_b_r$V)  /  ((C_b_r$B - C_b_l$B)^2 + scaleregul*(C_b_r$R + C_b_l$R)) )^C_b_l$rate)
   C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
   C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_d, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
   h_bw_d = c(( (C_h_l$V + C_h_r$V)  /  ((C_h_r$B - C_h_l$B)^2 + scaleregul*(C_h_r$R + C_h_l$R)) )^C_h_l$rate)
-    
-  #if (C_b_l$V==0 | C_b_l$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) below the threshold. Range defined by bandwidth = %f\n", d_bw_d)  
-  #if (C_b_r$V==0 | C_b_r$B==0) printf("{err}Not enough variability to compute the bias bandwidth (b) above the threshold. Range defined by bandwidth = %f\n", d_bw_d)  
-  #if (C_h_l$V==0 | C_h_l$B==0) printf("{err}Not enough variability to compute the loc. poly. bandwidth (h) below the threshold. Range defined by bandwidth = %f\n", b_bw_d) 
-  #if (C_h_r$V==0 | C_h_r$B==0) printf("{err}Not enough variability to compute the loc. poly. bandwidth (h) above the threshold. Range defined by bandwidth = %f\n", b_bw_d) 
 }	
-                     
-#if (C_b_l$V==. | C_b_l$B==. | C_b_l$R==.) printf("{err}Invertibility problem in the computation of bias bandwidth (b) below the threshold") 			
-#if (C_b_r$V==. | C_b_r$B==. | C_b_r$R==.) printf("{err}Invertibility problem in the computation of bias bandwidth (b) above the threshold")  
-#if (C_h_l$V==. | C_h_l$B==. | C_h_l$R==.) printf("{err}Invertibility problem in the computation of loc. poly. bandwidth (h) below the threshold") 
-#if (C_h_r$V==. | C_h_r$B==. | C_h_r$R==.) printf("{err}Invertibility problem in the computation of loc. poly. bandwidth (h) above the threshold") 
-         
+  #if (C_b_l$V==0 | C_b_l$B==0 | C_b_r$V==0 | C_b_r$B==0 | C_b_l$V==. | C_b_l$B==. | C_b_l$R==. | C_b_r$V==. | C_b_r$B==. | C_b_r$R==.) printf("{err}Not enough variability to compute the bias bandwidth (b). Try checking for mass points with option masspoints=check." )  
+  #if (C_h_l$V==0 | C_b_l$B==0 | C_h_r$V==0 | C_h_r$B==0 | C_h_l$V==. | C_h_l$B==. | C_h_l$R==. | C_h_r$V==. | C_h_r$B==. | C_h_r$R==.) printf("{err}Not enough variability to compute the loc. poly. bandwidth (h). Try checking for mass points with option masspoints=check." )  
+
 if  (bwselect=="mserd" | bwselect=="cerrd" | bwselect=="msecomb1" | bwselect=="msecomb2" | bwselect=="cercomb1" | bwselect=="cercomb2" | bwselect=="" | all=="TRUE" ) {
   h_mserd = x_sd*h_bw_d
   b_mserd = x_sd*b_bw_d
@@ -347,7 +377,6 @@ cer_b = 1
 		b_cercomb2_r = b_msecomb2_r*cer_b
 	}
 
-
 if (all=="FALSE"){
   bw_list = bwselect
   bws = matrix(NA,1,4)
@@ -382,10 +411,10 @@ if (all=="FALSE"){
     bws[9,] =c(h_cercomb1,   h_cercomb1,   b_cercomb1,   b_cercomb1)
     bws[10,]=c(h_cercomb2_l, h_cercomb2_r, b_cercomb2_l, b_cercomb2_r)
   }
-  
 
   out = list(bws=bws, 
-             bwselect=bwselect, bw_list=bw_list, kernel=kernel_type, p=p, q=q, c=c, N=c(N_l,N_r), vce=vce_type)
+             bwselect=bwselect, bw_list=bw_list, kernel=kernel_type, p=p, q=q, c=c,
+             N=c(N_l,N_r), M=c(M_l,M_r), vce=vce_type, masspoints=masspoints)
   out$call <- match.call()
   class(out) <- "rdbwselect"
   return(out)
@@ -400,7 +429,8 @@ print.rdbwselect <- function(x,...){
   cat("\n")
   cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
   cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("Order bias  (p)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
+  cat(paste("Order bias  (q)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
+  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ",  format(sprintf("%9.0f",x$M[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$M[2],width=10, justify="right")),        "\n", sep=""))
   cat("\n")
 }
 
@@ -418,6 +448,7 @@ summary.rdbwselect <- function(object,...) {
   cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
   cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
   cat(paste("Order bias  (q)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
+  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ",  format(sprintf("%9.0f",x$M[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$M[2],width=10, justify="right")),        "\n", sep=""))
   cat("\n")
   
   

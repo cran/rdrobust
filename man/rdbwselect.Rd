@@ -5,18 +5,21 @@
 \title{Bandwidth Selection Procedures for Local Polynomial Regression Discontinuity Estimators}
 \description{
 
-\code{\link{rdbwselect}} implements bandwidth selectors for local polynomial Regression Discontinuity (RD) point estimators and inference procedures developed in Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2018), and Calonico, Cattaneo, Farrell and Titiunik (2018).
+\code{\link{rdbwselect}} implements bandwidth selectors for local polynomial Regression Discontinuity (RD) point estimators and inference procedures developed in Calonico, Cattaneo and Titiunik (2014a), Calonico, Cattaneo and Farrell (2018), Calonico, Cattaneo, Farrell and Titiunik (2019) and Calonico, Cattaneo and Farrell (2020).
 
 Companion commands are: \code{\link{rdrobust}} for point estimation and inference procedures, and \code{\link{rdplot}} for data-driven RD plots (see Calonico, Cattaneo and Titiunik (2015a) for details).
 
-A detailed introduction to this command is given in Calonico, Cattaneo and Titiunik (2015b) and Calonico, Cattaneo, Farrell and Titiunik (2018). A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014b).
+A detailed introduction to this command is given in Calonico, Cattaneo and Titiunik (2015b) and Calonico, Cattaneo, Farrell and Titiunik (2019). A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014b).
     
 For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://sites.google.com/site/rdpackages/}
 }
-\usage{rdbwselect(y, x, c = NULL,  fuzzy = NULL, deriv = NULL, p = NULL, q = NULL, covs = NULL,  
+\usage{rdbwselect(y, x, c = NULL,  fuzzy = NULL, deriv = NULL, p = NULL, q = NULL, 
+              covs = NULL, covs_drop = TRUE,
               kernel = "tri", weights = NULL, bwselect = "mserd", 
               vce = "nn",  cluster = NULL, nnmatch = 3, 
-              scaleregul = 1, sharpbw = FALSE, all = NULL, subset = NULL)}
+              scaleregul = 1, sharpbw = FALSE, 
+              all = NULL, subset = NULL, 
+              masspoints = "adjust", bwcheck = NULL)}
 \arguments{
   \item{y}{is the dependent variable.}
   \item{x}{is the running variable (a.k.a. score or forcing variable).}
@@ -25,7 +28,8 @@ For more details, and related Stata and R packages useful for analysis of RD des
     \item{deriv}{specifies the order of the derivative of the regression functions to be estimated. Default is \code{deriv=0} (for Sharp RD, or for Fuzzy RD if \code{fuzzy} is also specified). Setting \code{deriv=1} results in estimation of a Kink RD design (up to scale), or Fuzzy Kink RD if \code{fuzzy} is also specified.}
   \item{p}{specifies the order of the local-polynomial used to construct the point-estimator; default is \code{p = 1} (local linear regression).}
   \item{q}{specifies the order of the local-polynomial used to construct the bias-correction; default is \code{q = 2} (local quadratic regression).}
-    \item{covs}{specifies additional covariates to be used for estimation and inference.}
+  \item{covs}{specifies additional covariates to be used for estimation and inference.}
+  \item{covs_drop}{if TRUE, it checks for collinear additional covariates and drops them. Default is TRUE.}
   \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
     \item{weights}{is the variable used for optional weighting of the estimation procedure. The unit-specific weights multiply the kernel function.}
 \item{bwselect}{specifies the bandwidth selection procedure to be used. Options are:
@@ -73,6 +77,16 @@ Default is \code{vce=nn}.}
   \item{sharpbw}{option to perform fuzzy RD estimation using a bandwidth selection procedure for the sharp RD model. This option is automatically selected if there is perfect compliance at either side of the threshold.}
   \item{all}{if specified, \code{\link{rdbwselect}} reports all available bandwidth selection procedures.}
   \item{subset}{an optional vector specifying a subset of observations to be used.}
+  \item{masspoints}{checks and controls for repeated observations in the running variable. Options are:
+  
+    (i)  \code{off}: ignores the presence of mass points; 
+    
+    (ii) \code{check}: looks for and reports the number of unique observations at each side of the cutoff. 
+    
+    (iii) \code{adjust}: controls that the preliminary bandwidths used in the calculations contain a minimal number of unique observations. By default it uses 10 observations, but it can be manually adjusted with the option \code{bwcheck}). 
+    
+    Default option is \code{masspoints=adjust}.}
+    \item{bwcheck}{if a positive integer is provided, the preliminary bandwidth used in the calculations is enlarged so that at least \code{bwcheck} unique observations are used.}
 }
 \value{
   \item{N}{vector with sample sizes to the left and to the righst of the cutoff.}
@@ -87,9 +101,11 @@ Default is \code{vce=nn}.}
 
 Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2018. \href{https://sites.google.com/site/nppackages/nprobust/Calonico-Cattaneo-Farrell_2018_JASA.pdf}{On the Effect of Bias Estimation on Coverage Accuracy in Nonparametric Inference.} \emph{Journal of the American Statistical Association}, 113(522): 767-779. 
 
+Calonico, S., M. D. Cattaneo, and M. H. Farrell. 2020. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell_2020_ECTJ.pdf}{Optimal Bandwidth Choice for Robust Bias Corrected Inference in Regression Discontinuity Designs.} \emph{Econometrics Journal}, forthcoming.
+
 Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}{rdrobust: Software for Regression Discontinuity Designs.} \emph{Stata Journal} 17(2): 372-404.
 
-Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2018. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2018_RESTAT.pdf}{Regression Discontinuity Designs using Covariates.} \emph{Review of Economics and Statistics}, forthcoming. 
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2019. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2019_RESTAT.pdf}{Regression Discontinuity Designs using Covariates.} \emph{Review of Economics and Statistics}, 101(3): 442-451. 
 
 Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014a. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}{Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs.} \emph{Econometrica} 82(6): 2295-2326.
 
@@ -102,13 +118,13 @@ Calonico, S., M. D. Cattaneo, and R. Titiunik. 2015b. \href{https://sites.google
 Cattaneo, M. D., B. Frandsen, and R. Titiunik. 2015. \href{https://sites.google.com/site/rdpackages/rdlocrand/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}{Randomization Inference in the Regression Discontinuity Design: An Application to the Study of Party Advantages in the U.S. Senate.} \emph{Journal of Causal Inference} 3(1): 1-24.
 }
 \author{
-Sebastian Calonico, University of Miami, Coral Gables, FL.  \email{scalonico@bus.miami.edu}.
+Sebastian Calonico, Columbia University, New York, NY.  \email{sebastian.calonico@columbia.edu}.
 
-Matias D. Cattaneo, University of Michigan, Ann Arbor, MI.  \email{cattaneo@umich.edu}.
+Matias D. Cattaneo, Princeton University, Princeton, NJ.  \email{cattaneo@princeton.edu}.
 
 Max H. Farrell, University of Chicago, Chicago, IL. \email{max.farrell@chicagobooth.edu}.
 
-Rocio Titiunik, University of Michigan, Ann Arbor, MI.  \email{titiunik@umich.edu}.
+Rocio Titiunik, Princeton University, Princeton, NJ.  \email{titiunik@princeton.edu}.
 }
 \examples{
 x<-runif(1000,-1,1)

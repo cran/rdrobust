@@ -16,8 +16,9 @@ For more details, and related Stata and R packages useful for analysis of RD des
 \usage{
 rdplot(y, x, c = 0, p = 4, nbins = NULL, binselect = "esmv",  
           scale = NULL, kernel = "uni", weights = NULL, h = NULL, 
-          covs = NULL, support = NULL, subset = NULL, hide = FALSE, ci = NULL, 
-          shade = FALSE, par = NULL, title = NULL, 
+          covs = NULL, covs_eval = 0, covs_drop = TRUE, 
+          support = NULL, subset = NULL, 
+          hide = FALSE, ci = NULL, shade = FALSE, title = NULL, 
           x.label = NULL, y.label = NULL, x.lim = NULL, y.lim = NULL, 
           col.dots = NULL, col.lines = NULL, type.dots = NULL,...)
 }
@@ -48,15 +49,16 @@ rdplot(y, x, c = 0, p = 4, nbins = NULL, binselect = "esmv",
        \item{scale}{specifies a multiplicative factor to be used with the optimal numbers of bins selected. Specifically, the number of bins used for the treatment and control groups will be \code{scale}\eqn{\times \hat{J}_+} and \code{scale}\eqn{\times \hat{J}_-}, where \eqn{\hat{J}_\cdot} denotes the estimated optimal numbers of bins originally computed for each group; default is \code{scale = 1}.}
   \item{kernel}{specifies the kernel function used to construct the local-polynomial estimator(s). Options are: \code{triangular}, \code{epanechnikov}, and \code{uniform}. Default is \code{kernel=uniform} (i.e., equal/no weighting to all observations on the support of the kernel).}
   \item{weights}{is the variable used for optional weighting of the estimation procedure. The unit-specific weights multiply the kernel function.}
-\item{h}{specifies the bandwidth used to construct the (global) polynomial fits given the kernel choice \code{kernel}.
+  \item{h}{specifies the bandwidth used to construct the (global) polynomial fits given the kernel choice \code{kernel}.
 If not specified, the bandwidths are chosen to span the full support of the data. If two bandwidths are specified, the first bandwidth is used for the data below the cutoff and the second bandwidth is used for the data above the cutoff.}
   \item{covs}{specifies additional covariates to be used in the polynomial regression.}
+  \item{covs_eval}{sets the evaluation points for the additional covariates, when included in the estimation. Options are: \code{covs_eval = 0} (default) and \code{covs_eval = "mean"}}
+  \item{covs_drop}{if TRUE, it checks for collinear additional covariates and drops them. Default is TRUE.}
   \item{support}{specifies an optional extended support of the running variable to be used in the construction of the bins;  default is the sample range.}
   \item{subset}{an optional vector specifying a subset of observations to be used.}
   \item{hide}{logical. If \code{TRUE}, it omits the RD plot; default is \code{hide = FALSE}.}
   \item{ci}{optional graphical option to display confidence intervals of selected level for each bin.}
   \item{shade}{optional graphical option to replace confidence intervals with shaded areas.}
-  \item{par}{optional graphical parameters.}
   \item{title}{optional title for the RD plot.}
   \item{x.label}{optional label for the x-axis of the RD plot.}
   \item{y.label}{optional label for the y-axis of the RD plot.}
@@ -98,13 +100,13 @@ Calonico, S., M. D. Cattaneo, and R. Titiunik. 2015b. \href{https://sites.google
 Cattaneo, M. D., B. Frandsen, and R. Titiunik. 2015. \href{https://sites.google.com/site/rdpackages/rdlocrand/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}{Randomization Inference in the Regression Discontinuity Design: An Application to the Study of Party Advantages in the U.S. Senate.} \emph{Journal of Causal Inference} 3(1): 1-24.
 }
 \author{
-Sebastian Calonico, University of Miami, Coral Gables, FL.  \email{scalonico@bus.miami.edu}.
+Sebastian Calonico, Columbia University, New York, NY.  \email{sebastian.calonico@columbia.edu}.
 
-Matias D. Cattaneo, University of Michigan, Ann Arbor, MI.  \email{cattaneo@umich.edu}.
+Matias D. Cattaneo, Princeton University, Princeton, NJ.  \email{cattaneo@princeton.edu}.
 
 Max H. Farrell, University of Chicago, Chicago, IL. \email{max.farrell@chicagobooth.edu}.
 
-Rocio Titiunik, University of Michigan, Ann Arbor, MI.  \email{titiunik@umich.edu}.
+Rocio Titiunik, Princeton University, Princeton, NJ.  \email{titiunik@princeton.edu}.
 }
 \examples{
 x<-runif(1000,-1,1)
