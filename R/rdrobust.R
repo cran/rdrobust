@@ -4,7 +4,8 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
                     kernel = "tri", weights = NULL, bwselect = "mserd",
                     vce = "nn", cluster = NULL, nnmatch = 3, level = 95, 
                     scalepar = 1, scaleregul = 1, sharpbw = FALSE, 
-                    all = NULL, subset = NULL, masspoints = "adjust", bwcheck = NULL) {
+                    all = NULL, subset = NULL, masspoints = "adjust",
+                    bwcheck = NULL, bwrestrict=TRUE, stdvars=FALSE) {
   
   if (!is.null(subset)) {
     x <- x[subset]
@@ -209,9 +210,9 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
     
     if (is.null(h)) {
       invisible(capture.output( rdbws<- rdbwselect(y=y, x=x, c=c, fuzzy=fuzzy,  deriv=deriv, p=p, q=q, covs=covs, 
-                       kernel=kernel,  weights=weights, bwselect=bwselect,  bwcheck = bwcheck,
+                       kernel=kernel,  weights=weights, bwselect=bwselect,  bwcheck = bwcheck, bwrestrict=bwrestrict,
                        vce=vce, cluster=cluster,  nnmatch=nnmatch,  scaleregul=scaleregul,
-                       sharpbw = sharpbw, subset=subset, masspoints=masspoints)))
+                       sharpbw = sharpbw, subset=subset, masspoints=masspoints, stdvars=stdvars)))
       h_l = c(rdbws$bws[1]); b_l = c(rdbws$bws[3])
       h_r = c(rdbws$bws[2]); b_r = c(rdbws$bws[4])
       

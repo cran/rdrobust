@@ -3,7 +3,8 @@ rdbwselect = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL, p = NULL, q = 
                       kernel = "tri", weights = NULL, bwselect = "mserd", 
                       vce = "nn", cluster = NULL, 
                       nnmatch = 3,  scaleregul = 1, sharpbw = FALSE,  
-                      all = NULL, subset = NULL, masspoints = "adjust", bwcheck = NULL){
+                      all = NULL, subset = NULL, masspoints = "adjust",
+                      bwcheck = NULL, bwrestrict=TRUE, stdvars=FALSE){
   
   if (!is.null(subset)) { 
     x <- x[subset]
@@ -85,17 +86,21 @@ rdbwselect = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL, p = NULL, q = 
   }
   
   ### reescaling
-  c_orig = c
-  y_sd = sd(y)
-  x_sd = sd(x)
-  y = y/y_sd
-	x = x/x_sd
-	c = c/x_sd
-	
-  #x_sd = sd(x)
-  #x_iq = quantile(x,.75, type=6) - quantile(x,.25, type=6)
-  x_iq = quantile(x,.75,type=2) - quantile(x,.25,type=2)
   
+  x_iq = quantile(x,.75,type=2) - quantile(x,.25,type=2)
+  BWp = min(c(sd(x),x_iq/1.349))
+  
+  x_sd = y_sd = 1
+  c_orig = c
+  if (isTRUE(stdvars)) { 
+    y_sd = sd(y)
+    x_sd = sd(x)
+    y = y/y_sd
+	  x = x/x_sd
+	  c = c/x_sd
+	  BWp = min(c(1,(x_iq/x_sd)/1.349))
+  }
+  ###############################################
   X_l = x[x<c];   X_r = x[x>=c]
   x_l_min = min(X_l);  x_l_max = max(X_l)
   x_r_min = min(X_r);  x_r_max = max(X_r)
@@ -257,8 +262,16 @@ rdbwselect = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL, p = NULL, q = 
     fw_l=weights[x<c];  fw_r=weights[x>=c]
   }                                                                           
     #***********************************************************************
-    c_bw = C_c*min(c(1,x_iq/1.349))*N^(-1/5)
-    if (masspoints=="adjust") c_bw = C_c*min(c(1,x_iq/1.349))*M^(-1/5)
+  
+    c_bw = C_c*BWp*N^(-1/5)
+    if (masspoints=="adjust") c_bw = C_c*BWp*M^(-1/5)
+    
+    if (isTRUE(bwrestrict)) {
+      bw_max_l = abs(c-x_min)
+      bw_max_r = abs(c-x_max)
+      bw_max = max(bw_max_l, bw_max_r)
+      c_bw <- min(c_bw, bw_max)
+    }
     
     bw.adj <- 0
     if (!is.null(bwcheck)) {
@@ -279,6 +292,11 @@ rdbwselect = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL, p = NULL, q = 
     if  (bwselect=="msetwo" |  bwselect=="certwo" | bwselect=="msecomb2" | bwselect=="cercomb2"  | all=="TRUE")  {		
       d_bw_l = c((  C_d_l$V              /   C_d_l$B^2             )^C_d_l$rate)
       d_bw_r = c((  C_d_r$V              /   C_d_r$B^2             )^C_d_l$rate)
+      if (isTRUE(bwrestrict)) {
+        d_bw_l <- min(d_bw_l, bw_max_l)
+        d_bw_r <- min(d_bw_r, bw_max_r)
+      }
+      
       if (!is.null(bwcheck)) {
         d_bw_l  <- max(d_bw_l, bw_min_l)
         d_bw_r  <- max(d_bw_r, bw_min_r)
@@ -287,35 +305,64 @@ rdbwselect = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL, p = NULL, q = 
       b_bw_l = c((  C_b_l$V              /   (C_b_l$B^2 + scaleregul*C_b_l$R)        )^C_b_l$rate)
       C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_r, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
       b_bw_r = c((  C_b_r$V              /   (C_b_r$B^2 + scaleregul*C_b_r$R)        )^C_b_l$rate)
-
+      if (isTRUE(bwrestrict)) {
+        b_bw_l <- min(b_bw_l, bw_max_l)
+        b_bw_r <- min(b_bw_r, bw_max_r)
+      }
+      
       C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_l, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
       h_bw_l = c((  C_h_l$V              /   (C_h_l$B^2 + scaleregul*C_h_l$R)         )^C_h_l$rate)
       C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_r, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
       h_bw_r = c((  C_h_r$V              /   (C_h_r$B^2 + scaleregul*C_h_r$R)         )^C_h_l$rate)
+      if (isTRUE(bwrestrict)) {
+        h_bw_l <- min(h_bw_l, bw_max_l)
+        h_bw_r <- min(h_bw_r, bw_max_r) 
+      }
+      
     }
   
 #  *** SUM
   if  (bwselect=="msesum" | bwselect=="cersum" |  bwselect=="msecomb1" | bwselect=="msecomb2" |  bwselect=="cercomb1" | bwselect=="cercomb2"  |  all=="TRUE")  {
     d_bw_s = c(( (C_d_l$V + C_d_r$V)  /  (C_d_r$B + C_d_l$B)^2 )^C_d_l$rate)
+    if (isTRUE(bwrestrict)) {
+    d_bw_s <- min(d_bw_s, bw_max)
+    }
+    
     if (!is.null(bwcheck)) d_bw_s  <-  max(d_bw_s, bw_min_l, bw_min_r)
     C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_s, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
     C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_s, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
     b_bw_s = c(( (C_b_l$V + C_b_r$V)  /  ((C_b_r$B + C_b_l$B)^2 + scaleregul*(C_b_r$R+C_b_l$R)) )^C_b_l$rate)
+    if (isTRUE(bwrestrict)) {
+    b_bw_s <- min(b_bw_s, bw_max)
+    }
     C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_s, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
     C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_s, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
     h_bw_s = c(( (C_h_l$V + C_h_r$V)  /  ((C_h_r$B + C_h_l$B)^2 + scaleregul*(C_h_r$R + C_h_l$R)) )^C_h_l$rate)
+    if (isTRUE(bwrestrict)) {
+    h_bw_s <- min(h_bw_s, bw_max)
+    }
 }
 
     # *** RD
 if  (bwselect=="mserd" | bwselect=="cerrd" | bwselect=="msecomb1" | bwselect=="msecomb2" | bwselect=="cercomb1" | bwselect=="cercomb2" | bwselect=="" | all=="TRUE" ) {
   d_bw_d = c(( (C_d_l$V + C_d_r$V)  /  (C_d_r$B - C_d_l$B)^2 )^C_d_l$rate)
+  if (isTRUE(bwrestrict)) {
+    d_bw_d <- min(d_bw_d, bw_max)
+  }
   if (!is.null(bwcheck)) d_bw_d  <- max(d_bw_d, bw_min_l, bw_min_r)
   C_b_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
   C_b_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=q, nu=p+1, o_B=q+1, h_V=c_bw, h_B=d_bw_d, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
   b_bw_d = c(( (C_b_l$V + C_b_r$V)  /  ((C_b_r$B - C_b_l$B)^2 + scaleregul*(C_b_r$R + C_b_l$R)) )^C_b_l$rate)
+  if (isTRUE(bwrestrict)) {
+    b_bw_d <- min(b_bw_d, bw_max)
+  }
   C_h_l  = rdrobust_bw(Y_l, X_l, T_l, Z_l, C_l, fw_l, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_d, scaleregul, vce, nnmatch, kernel, dups_l, dupsid_l)
   C_h_r  = rdrobust_bw(Y_r, X_r, T_r, Z_r, C_r, fw_r, c=c, o=p, nu=deriv, o_B=q, h_V=c_bw, h_B=b_bw_d, scaleregul, vce, nnmatch, kernel, dups_r, dupsid_r)
   h_bw_d = c(( (C_h_l$V + C_h_r$V)  /  ((C_h_r$B - C_h_l$B)^2 + scaleregul*(C_h_r$R + C_h_l$R)) )^C_h_l$rate)
+  if (isTRUE(bwrestrict)) {
+  h_bw_d <- min(h_bw_d, bw_max)
+  }
+  
 }	
   #if (C_b_l$V==0 | C_b_l$B==0 | C_b_r$V==0 | C_b_r$B==0 | C_b_l$V==. | C_b_l$B==. | C_b_l$R==. | C_b_r$V==. | C_b_r$B==. | C_b_r$R==.) printf("{err}Not enough variability to compute the bias bandwidth (b). Try checking for mass points with option masspoints=check." )  
   #if (C_h_l$V==0 | C_b_l$B==0 | C_h_r$V==0 | C_h_r$B==0 | C_h_l$V==. | C_h_l$B==. | C_h_l$R==. | C_h_r$V==. | C_h_r$B==. | C_h_r$R==.) printf("{err}Not enough variability to compute the loc. poly. bandwidth (h). Try checking for mass points with option masspoints=check." )  

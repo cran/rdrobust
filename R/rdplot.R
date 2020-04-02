@@ -465,8 +465,8 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 	
   if (hide=="FALSE") {
   
-    #if (is.null(col.lines)) col.lines = "red"
-    #if (is.null(col.dots))  col.dots  = "darkblue"
+    if (is.null(col.lines)) col.lines = "red"
+    if (is.null(col.dots))  col.dots  = "darkblue"
     if (is.null(type.dots)) type.dots = 20
     if (is.null(title)) title="RD Plot"
     if (is.null(x.label)) x.label="X axis"
@@ -481,9 +481,9 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
     data_poly <- data.frame(x_plot_l, y_hat_l, x_plot_r, y_hat_r)
     
     temp_plot <- ggplot() + theme_bw() +
-        geom_point(data=data_bins, aes(x=rdplot_mean_bin, y=rdplot_mean_y, col=col.dots), na.rm=TRUE) +
-        geom_line( data=data_poly, aes(x=x_plot_l, y=y_hat_l, col=col.lines), na.rm=TRUE) +
-        geom_line( data=data_poly, aes(x=x_plot_r, y=y_hat_r, col=col.lines), na.rm=TRUE) 
+        geom_point(data=data_bins, aes(x=rdplot_mean_bin, y=rdplot_mean_y), col=col.dots, na.rm=TRUE) +
+        geom_line( data=data_poly, aes(x=x_plot_l, y=y_hat_l), col=col.lines, na.rm=TRUE) +
+        geom_line( data=data_poly, aes(x=x_plot_r, y=y_hat_r), col=col.lines, na.rm=TRUE) 
 
     if (flag_no_ci==FALSE)
     temp_plot <- temp_plot +

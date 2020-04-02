@@ -14,13 +14,15 @@ A detailed introduction to this command is given in Calonico, Cattaneo and Titiu
 For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://sites.google.com/site/rdpackages/}
 
 }
-\usage{rdrobust(y, x, c = NULL,  fuzzy = NULL, deriv = NULL, p = NULL, q = NULL, 
-                h = NULL, b = NULL, rho = NULL, covs = NULL,  covs_drop = TRUE, 
-                kernel = "tri", weights = NULL, bwselect = "mserd", 
-                vce = "nn", cluster = NULL, 
-                nnmatch = 3, level = 95, scalepar = 1, scaleregul = 1, 
-                sharpbw = FALSE, all = NULL, subset = NULL,
-                masspoints = "adjust", bwcheck = NULL)}
+\usage{rdrobust(y, x, c = NULL,  fuzzy = NULL, 
+          deriv = NULL, p = NULL, q = NULL, 
+          h = NULL, b = NULL, rho = NULL, covs = NULL,  covs_drop = TRUE,
+          kernel = "tri", weights = NULL, bwselect = "mserd", 
+          vce = "nn", cluster = NULL, 
+          nnmatch = 3, level = 95, scalepar = 1, scaleregul = 1, 
+          sharpbw = FALSE, all = NULL, subset = NULL,
+          masspoints = "adjust", bwcheck = NULL,
+          bwrestrict = TRUE, stdvars = FALSE)}
 \arguments{
   \item{y}{is the dependent variable.}
   \item{x}{is the running variable (a.k.a. score or forcing variable).}
@@ -102,6 +104,11 @@ Default is \code{vce=nn}.}
     
     Default option is \code{masspoints=adjust}.}
     \item{bwcheck}{if a positive integer is provided, the preliminary bandwidth used in the calculations is enlarged so that at least \code{bwcheck} unique observations are used.}
+    
+    \item{bwrestrict}{if \code{TRUE}, computed bandwidths are restricted to lie within the range of \code{x}; default is \code{bwrestrict = TRUE}.}
+      
+    \item{stdvars}{if \code{TRUE}, \code{x} and \code{y} are standardized before computing the bandwidths; default is \code{stdvars = FALSE}.}
+      
 }
 \value{
   \item{N}{vector with the sample sizes used to the left and to the right of the cutoff.}
