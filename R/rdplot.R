@@ -1,8 +1,8 @@
 rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL, 
                   kernel = "uni", weights = NULL, h = NULL, covs = NULL,  covs_eval = 0, covs_drop = TRUE,
                   support = NULL, subset = NULL, hide = FALSE, ci = NULL, shade = FALSE, 
-                  title = NULL, x.label = NULL, y.label = NULL, 
-                  x.lim = NULL, y.lim = NULL, col.dots = NULL, col.lines = NULL, type.dots = NULL, ...) {
+                  title = NULL, x.label = NULL, y.label = NULL, x.lim = NULL, y.lim = NULL, 
+                  col.dots = NULL, col.lines = NULL) {
 
   if (!is.null(subset)) {
     x <- x[subset]
@@ -199,7 +199,6 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 	  y_hat_l = rplot_l%*%gamma_p1_l + c(gammaZ)
 	  y_hat_r = rplot_r%*%gamma_p1_r + c(gammaZ)
 	}
-	
 	
   ###############################################
   ### Optimal Bins (using polynomial order k) ###
@@ -457,7 +456,7 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 	rdplot_sd_y_r[is.na(rdplot_sd_y_r)]=0
 	rdplot_sd_y=c(rev(rdplot_sd_y_l),rdplot_sd_y_r)
 	rdplot_N=c(rev(rdplot_N_l),rdplot_N_r)
-	quant = -qt((1-(ci/100))/2,max(rdplot_N-1,1))
+	quant = -qt((1-(ci/100))/2,pmax(rdplot_N-1,1))
 	rdplot_se_y <- rdplot_sd_y/sqrt(rdplot_N)
 	rdplot_cil_bin = rdplot_mean_y - quant*rdplot_se_y
 	rdplot_cir_bin = rdplot_mean_y + quant*rdplot_se_y
@@ -467,7 +466,7 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
   
     if (is.null(col.lines)) col.lines = "red"
     if (is.null(col.dots))  col.dots  = "darkblue"
-    if (is.null(type.dots)) type.dots = 20
+    #if (is.null(type.dots)) type.dots = 20
     if (is.null(title)) title="RD Plot"
     if (is.null(x.label)) x.label="X axis"
     if (is.null(y.label)) y.label="Y axis"
@@ -475,8 +474,6 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
     #if (is.null(y.lim)) y.lim=c(min(c(y_l,y_r)),max(c(y_l,y_r)))
     #if (is.null(y.lim)) y.lim=c(min(rdplot_mean_y),max(rdplot_mean_y))
     
-    #par=par
-  
     data_bins <- data.frame(rdplot_mean_bin, rdplot_mean_y, rdplot_cil_bin, rdplot_cir_bin)
     data_poly <- data.frame(x_plot_l, y_hat_l, x_plot_r, y_hat_r)
     
@@ -487,17 +484,16 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 
     if (flag_no_ci==FALSE)
     temp_plot <- temp_plot +
-      geom_errorbar(data=data_bins, aes(x=rdplot_mean_bin, ymin=rdplot_cil_bin, ymax=rdplot_cir_bin), linetype=1) 
+      geom_errorbar(data=data_bins, aes(x=rdplot_mean_bin, ymin=rdplot_cil_bin, ymax=rdplot_cir_bin), linetype = 1) 
       if (shade==TRUE){
        temp_plot <- temp_plot +
          geom_ribbon(data=data_bins, aes(x=rdplot_mean_bin, ymin=rdplot_cil_bin, ymax=rdplot_cir_bin))
     }
     
-    temp_plot <- temp_plot + labs(x=x.label, y=y.label) + ggtitle(title)+
-      #labs(title=title, y=y.label, x=x.label) +
-      coord_cartesian(xlim=x.lim, ylim=y.lim) +
-      theme(legend.position="None") +
-      geom_vline(xintercept = c, size=0.5) 
+    temp_plot <- temp_plot + labs(x = x.label, y = y.label) + ggtitle(title)+
+      coord_cartesian(xlim = x.lim, ylim = y.lim) +
+      theme(legend.position = "None") +
+      geom_vline(xintercept = c, size = 0.5) 
     print(temp_plot)
     }
 
@@ -517,7 +513,7 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
     
     coef = cbind(gamma_p1_l,gamma_p1_r)
     colnames(coef)=c("Left","Right")
-    out=list(coef=coef, vars_bins=vars_bins, vars_poly=vars_poly,
+    out=list(coef=coef, rdplot=temp_plot, vars_bins=vars_bins, vars_poly=vars_poly,
              J=c(J_star_l,J_star_r), J_IMSE=J_IMSE, J_MV=J_MV, 
              scale=c(scale_l,scale_r), rscale=c(rscale_l,rscale_r),
              bin_avg=c(bin_avg_l,bin_avg_r), bin_med=c(bin_med_l,bin_med_r),
