@@ -169,6 +169,14 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
     }
     if (!is.null(h) & !is.null(rho) ) b = h/rho
     
+  
+  if (N<20){
+			print("Not enough observations to perform bandwidth calculations. Estimates computed using entire sample")
+      h = b = max(N_l,N_r)
+			bwselect = "Manual"
+			}
+  
+  
   if (kernel=="epanechnikov" | kernel=="epa") {
     kernel_type = "Epanechnikov"
   }   else if (kernel=="uniform" | kernel=="uni") {
@@ -177,6 +185,11 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
     kernel_type = "Triangular"
   }
 
+  
+  
+  
+  
+  
   vce_type = "NN"
   if (vce=="hc0")     		vce_type = "HC0"
   if (vce=="hc1")      	  vce_type = "HC1"

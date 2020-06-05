@@ -193,6 +193,12 @@ rdbwselect = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL, p = NULL, q = 
       exit = 1
     }
     
+    if (N<20){
+      print("Not enough observations to perform bandwidth calculations")
+      exit = 1
+    }
+    
+    
     if (exit>0) stop()
     
   

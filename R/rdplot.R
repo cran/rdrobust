@@ -127,6 +127,11 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
   	print("p should be an integer number")
   	exit = 1
 	}
+	
+	if (n<20){
+	  print("Not enough observations to perform bin calculations")
+	  exit = 1
+	}
 
 	if (exit>0) stop()
 	
