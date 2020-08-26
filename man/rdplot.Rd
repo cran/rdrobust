@@ -11,7 +11,7 @@ Companion commands are: \code{\link{rdrobust}} for point estimation and inferenc
 
 A detailed introduction to this command is given in Calonico, Cattaneo and Titiunik (2015b) and Calonico, Cattaneo, Farrell and Titiunik (2017). A companion \code{Stata} package is described in Calonico, Cattaneo and Titiunik (2014).
 
-For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://sites.google.com/site/rdpackages/}
+For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://rdpackages.github.io/}
 }
 \usage{
 rdplot(y, x, c = 0, p = 4, nbins = NULL, binselect = "esmv",  
@@ -88,15 +88,15 @@ If not specified, the bandwidths are chosen to span the full support of the data
   \item{rdplot}{a standard \code{ggplot} object that can be used for further customization.}
 }
 \references{
-Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}{rdrobust: Software for Regression Discontinuity Designs.} \emph{Stata Journal} 17(2): 372-404. 
+Calonico, S., M. D. Cattaneo, M. H. Farrell, and R. Titiunik. 2017. \href{https://rdpackages.github.io/references/Calonico-Cattaneo-Farrell-Titiunik_2017_Stata.pdf}{rdrobust: Software for Regression Discontinuity Designs.} \emph{Stata Journal} 17(2): 372-404. 
 
-Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}{Robust Data-Driven Inference in the Regression-Discontinuity Design.} \emph{Stata Journal} 14(4): 909-946.
+Calonico, S., M. D. Cattaneo, and R. Titiunik. 2014. \href{https://rdpackages.github.io/references/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}{Robust Data-Driven Inference in the Regression-Discontinuity Design.} \emph{Stata Journal} 14(4): 909-946.
 
-Calonico, S., M. D. Cattaneo, and R. Titiunik. 2015a. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Titiunik_2015_JASA.pdf}{Optimal Data-Driven Regression Discontinuity Plots.} \emph{Journal of the American Statistical Association} 110(512): 1753-1769.
+Calonico, S., M. D. Cattaneo, and R. Titiunik. 2015a. \href{https://rdpackages.github.io/references/Calonico-Cattaneo-Titiunik_2015_JASA.pdf}{Optimal Data-Driven Regression Discontinuity Plots.} \emph{Journal of the American Statistical Association} 110(512): 1753-1769.
 
-Calonico, S., M. D. Cattaneo, and R. Titiunik. 2015b. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Titiunik_2015_R.pdf}{rdrobust: An R Package for Robust Nonparametric Inference in Regression-Discontinuity Designs.} \emph{R Journal} 7(1): 38-51.
+Calonico, S., M. D. Cattaneo, and R. Titiunik. 2015b. \href{https://rdpackages.github.io/references/Calonico-Cattaneo-Titiunik_2015_R.pdf}{rdrobust: An R Package for Robust Nonparametric Inference in Regression-Discontinuity Designs.} \emph{R Journal} 7(1): 38-51.
 
-Cattaneo, M. D., B. Frandsen, and R. Titiunik. 2015. \href{https://sites.google.com/site/rdpackages/rdlocrand/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}{Randomization Inference in the Regression Discontinuity Design: An Application to the Study of Party Advantages in the U.S. Senate.} \emph{Journal of Causal Inference} 3(1): 1-24.
+Cattaneo, M. D., B. Frandsen, and R. Titiunik. 2015. \href{https://rdpackages.github.io/references/Cattaneo-Frandsen-Titiunik_2015_JCI.pdf}{Randomization Inference in the Regression Discontinuity Design: An Application to the Study of Party Advantages in the U.S. Senate.} \emph{Journal of Causal Inference} 3(1): 1-24.
 }
 \author{
 Sebastian Calonico, Columbia University, New York, NY.  \email{sebastian.calonico@columbia.edu}.

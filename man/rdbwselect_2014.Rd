@@ -12,7 +12,7 @@
         \code{\link{rdbwselect}} for data-driven bandwidth selection.
         \code{\link{rdplot}} for data-driven RD plots.
 
-    For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://sites.google.com/site/rdpackages/}}
+    For more details, and related Stata and R packages useful for analysis of RD designs, visit \url{https://rdpackages.github.io/}}
 \usage{rdbwselect_2014(y, x, subset = NULL, c = 0, p = 1, q = 2, deriv = 0,
               rho = NULL, kernel = "tri", bwselect = "CCT", scaleregul = 1,
               delta = 0.5, cvgrid_min = NULL, cvgrid_max = NULL, 
@@ -66,7 +66,7 @@
   \item{q}{order of the local-polynomial used to construct the bias-correction estimator.}
 }
 \references{
-        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014. \href{https://sites.google.com/site/rdpackages/rdrobust/Calonico-Cattaneo-Titiunik_2014_ECMA.pdf}{Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs.} \emph{Econometrica} 82(6): 2295-2326.   .
+        Calonico, S., Cattaneo, M. D., and R. Titiunik. 2014. \href{https://rdpackages.github.io/references/Calonico-Cattaneo-Titiunik_2014_Stata.pdf}{Robust Nonparametric Confidence Intervals for Regression-Discontinuity Designs.} \emph{Econometrica} 82(6): 2295-2326.   .
 }
 \author{
 Sebastian Calonico, Columbia University, New York, NY.  \email{sebastian.calonico@columbia.edu}.
