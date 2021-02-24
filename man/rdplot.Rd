@@ -16,8 +16,8 @@ For more details, and related Stata and R packages useful for analysis of RD des
 \usage{
 rdplot(y, x, c = 0, p = 4, nbins = NULL, binselect = "esmv",  
           scale = NULL, kernel = "uni", weights = NULL, h = NULL, 
-          covs = NULL, covs_eval = 0, covs_drop = TRUE, 
-          support = NULL, subset = NULL, 
+          covs = NULL, covs_eval = "mean", covs_drop = TRUE, 
+          support = NULL, subset = NULL, masspoints = "adjust",
           hide = FALSE, ci = NULL, shade = FALSE, title = NULL, 
           x.label = NULL, y.label = NULL, x.lim = NULL, y.lim = NULL, 
           col.dots = NULL, col.lines = NULL)
@@ -56,6 +56,16 @@ If not specified, the bandwidths are chosen to span the full support of the data
   \item{covs_drop}{if TRUE, it checks for collinear additional covariates and drops them. Default is TRUE.}
   \item{support}{specifies an optional extended support of the running variable to be used in the construction of the bins;  default is the sample range.}
   \item{subset}{an optional vector specifying a subset of observations to be used.}
+    \item{masspoints}{checks and controls for repeated observations in the running variable. Options are:
+  
+    (i)  \code{off}: ignores the presence of mass points; 
+    
+    (ii) \code{check}: looks for and reports the number of unique observations at each side of the cutoff. 
+    
+    (iii) \code{adjust}: sets \code{binselect()} as polynomial regression when mass points are present. 
+    
+    Default option is \code{masspoints=adjust}.}
+
   \item{hide}{logical. If \code{TRUE}, it omits the RD plot; default is \code{hide = FALSE}.}
   \item{ci}{optional graphical option to display confidence intervals of selected level for each bin.}
   \item{shade}{optional graphical option to replace confidence intervals with shaded areas.}

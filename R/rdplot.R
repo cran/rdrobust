@@ -1,6 +1,8 @@
 rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL, 
-                  kernel = "uni", weights = NULL, h = NULL, covs = NULL,  covs_eval = 0, covs_drop = TRUE,
-                  support = NULL, subset = NULL, hide = FALSE, ci = NULL, shade = FALSE, 
+                  kernel = "uni", weights = NULL, h = NULL, 
+                  covs = NULL,  covs_eval = "mean", covs_drop = TRUE,
+                  support = NULL, subset = NULL, masspoints = "adjust",
+                  hide = FALSE, ci = NULL, shade = FALSE, 
                   title = NULL, x.label = NULL, y.label = NULL, x.lim = NULL, y.lim = NULL, 
                   col.dots = NULL, col.lines = NULL) {
 
@@ -11,19 +13,16 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
   na.ok <- complete.cases(x) & complete.cases(y)
   
   if (!is.null(covs)){
-    covs=as.matrix(covs)
-    dZ = ncol(covs)
     if (!is.null(subset))  covs <- subset(covs,subset)
-    for (i in 1:dZ) {
-      na.ok <- na.ok & complete.cases(covs[,i])  
-    }
+    na.ok <- na.ok & complete.cases(covs)
   } 
+  
   
   x <- x[na.ok]
   y <- y[na.ok]
   
-  if (!is.null(covs)) covs <- subset(covs,na.ok)
-
+  if (!is.null(covs))    covs    = as.matrix(covs)[na.ok, , drop = FALSE]
+  
   x_min = min(x);	x_max = max(x)
 	x_l = x[x<c]; x_r = x[x>=c]	
   y_l = y[x<c];	y_r = y[x>=c]
@@ -83,18 +82,56 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
   if (kernel=="epanechnikov" | kernel=="epa") kernel_type = "Epanechnikov"
   if (kernel=="triangular" | kernel=="tri") kernel_type = "Triangular"
   
+  
+  ### Mass Points
+  if (is.null(masspoints)) masspoints=FALSE
+  mN = n
+  M_l = n_l
+  M_r = n_r
+  if (masspoints=="check" | masspoints=="adjust") {
+    X_uniq_l = sort(unique(x_l), decreasing=TRUE)
+    X_uniq_r = unique(x_r)
+    M_l = length(X_uniq_l)
+    M_r = length(X_uniq_r)
+    M = M_l + M_r
+    mass_l = 1-M_l/n_l
+    mass_r = 1-M_r/n_r				
+    if (mass_l>=0.2 | mass_r>=0.2){
+      print("Mass points detected in the running variable.")
+      if (masspoints=="check") print("Try using option masspoints=adjust.")
+      if (masspoints=="adjust") {
+        if (binselect=="es")    binselect="espr"
+        if (binselect=="esmv")  binselect="esmvpr"
+        if (binselect=="qs")    binselect="qspr"
+        if (binselect=="qsmv")  binselect="qsmvpr"
+      }
+    }
+  }				
+  
+  
+  
+  
   ############## COLLINEARITY
-  covs_drop_coll=NULL
+  covs_drop_coll=dZ=0
+  if (covs_drop == TRUE) covs_drop_coll = 1 
   if (!is.null(covs)) {
+    covs.names = colnames(covs)
+    if (is.null(covs.names)) {
+      covs.names = paste("z",1:ncol(covs),sep="")
+      colnames(covs) = covs.names
+    }
+    covs = covs[,order(nchar(covs.names))]
+    covs = as.matrix(covs)
+    dZ = length(covs.names)
     covs.check = covs_drop_fun(covs)
     if (covs.check$ncovs < dZ & covs_drop==FALSE) {
-        print("Multicollinearity issue detected in covs. Please rescale and/or remove redundant covariates, or use covs_drop option.")  
-      }
+      print("Multicollinearity issue detected in covs. Please rescale and/or remove redundant covariates, or use covs_drop option.")  
+    }
     if (covs.check$ncovs < dZ & isTRUE(covs_drop)) {
-      covs  <- covs.check$covs
-      dZ <- covs.check$ncovs
-      covs_drop_coll <-1
-      print("Multicollinearity issue detected in covs. Redundant covariates dropped.")  
+      covs  <- as.matrix(covs.check$covs)
+      dZ    <- covs.check$ncovs
+      #covs_drop_coll <-1
+      #print("Multicollinearity issue detected in covs. Redundant covariates dropped.")  
     }
   }
   
@@ -199,7 +236,7 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 	y_hat_l = rplot_l%*%gamma_p1_l
 	y_hat_r = rplot_r%*%gamma_p1_r
 
-	if (covs_eval=="mean") {
+	if (!is.null(covs) & covs_eval=="mean" ) {
 	  gammaZ = colMeans(covs)%*%gamma_p
 	  y_hat_l = rplot_l%*%gamma_p1_l + c(gammaZ)
 	  y_hat_r = rplot_r%*%gamma_p1_r + c(gammaZ)
@@ -402,30 +439,20 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
   rdplot_mean_bin_l=rdplot_mean_x_l=rdplot_mean_y_l=rep(0,J_star_l)
 	rdplot_mean_bin_r=rdplot_mean_x_r=rdplot_mean_y_r=rep(0,J_star_r)
 
-	if (covs_eval=="mean") {
+	if (!is.null(covs) & covs_eval=="mean") {
 	  covs_model_l = lm(y_l~ z_l + factor(bin_x_l)) 
 	  covs_model_r = lm(y_r~ z_r + factor(bin_x_r)) 
 	  yhatZ_l = predict(covs_model_l)
 	  yhatZ_r = predict(covs_model_r)
-	  
-	  #bin_x = c(bin_x_l,bin_x_r)
-	  #y_x=c(y_l,y_r)
-	  #z_x=rbind(z_l,z_r)
-	  #covs_model = lm(y_x~ z_x + factor(bin_x)) 
-	  #yhatZ = predict(covs_model)
-	  #yhatZ_l = yhatZ[x<c]
-	  #yhatZ_r = yhatZ[x>=c]
+
 	}
 	
-	#aggregate(x_l, by=list(bin_x_l), FUN=mean, na.rm=TRUE)	
-	#(aggregate(x_l, by=list(bin_x_l), FUN=max, na.rm=TRUE) +	aggregate(x_l, by=list(bin_x_l), FUN=min, na.rm=TRUE))/2
-	
-	
+
 	for (k in 1:(J_star_l)) {
 	  rdplot_mean_bin_l[k]    = mean(c(jumps_l[k],jumps_l[k+1]))
 	  rdplot_mean_x_l[k]      = mean(x_l[bin_x_l==-k])
 	  rdplot_mean_y_l[k]      = mean(y_l[bin_x_l==-k])
-	  if (covs_eval=="mean") rdplot_mean_y_l[k] = mean(yhatZ_l[bin_x_l==-k])
+	  if (!is.null(covs) & covs_eval=="mean") rdplot_mean_y_l[k] = mean(yhatZ_l[bin_x_l==-k])
 	}
 	
 	rdplot_mean_y_l = rev(rdplot_mean_y_l)
@@ -435,7 +462,7 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 	  rdplot_mean_bin_r[k]  = mean(c(jumps_r[k],jumps_r[k+1]))
 	  rdplot_mean_x_r[k]    = mean(x_r[bin_x_r==k])
 	  rdplot_mean_y_r[k]    = mean(y_r[bin_x_r==k]) 
-	  if (covs_eval=="mean") rdplot_mean_y_r[k] = mean(yhatZ_r[bin_x_r==k])
+	  if (!is.null(covs) & covs_eval=="mean") rdplot_mean_y_r[k] = mean(yhatZ_r[bin_x_r==k])
 	}
 	
 	rdplot_mean_bin_l[J_star_l]=mean(c(jumps_l[J_star_l],c))

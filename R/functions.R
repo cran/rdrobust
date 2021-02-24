@@ -86,7 +86,7 @@ rdrobust_res = function(X, y, T, Z, m, hii, vce, matches, dups, dupsid, d) {
 }
 
 
-rdrobust_bw = function(Y, X, T, Z, C, W, c, o, nu, o_B, h_V, h_B, scale, vce, nnmatch, kernel, dups, dupsid){
+rdrobust_bw = function(Y, X, T, Z, C, W, c, o, nu, o_B, h_V, h_B, scale, vce, nnmatch, kernel, dups, dupsid, covs_drop_coll){
   dT = dZ = dC = eC = 0
   w = rdrobust_kweight(X, c, h_V, kernel)
   dW = length(W)
@@ -118,7 +118,12 @@ rdrobust_bw = function(Y, X, T, Z, C, W, c, o, nu, o_B, h_V, h_B, scale, vce, nn
     UiGU =  crossprod(matrix(U[,colsZ],nrow=o+1),invG_V%*%U) 
     ZWZ = ZWD[,colsZ] - UiGU[,colsZ] 
     ZWY = ZWD[,1:(1+dT)] - UiGU[,1:(1+dT)] 
-    gamma = chol2inv(chol(ZWZ))%*%ZWY
+    #if (covs_drop_coll==0) gamma = chol2inv(chol(ZWZ))%*%ZWY
+    if (covs_drop_coll==1) {
+      gamma = ginv(ZWZ)%*%ZWY}
+    else {
+      gamma = chol2inv(chol(ZWZ))%*%ZWY
+    }
     s = c(1 , -gamma[,1])
   }
   if (!is.null(C)) {

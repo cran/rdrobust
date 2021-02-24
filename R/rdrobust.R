@@ -107,18 +107,26 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
 
   
   ############## COLLINEARITY
-  covs_drop_coll=NULL
+  covs_drop_coll=dZ=0
+  if (covs_drop == TRUE) covs_drop_coll = 1 
   if (!is.null(covs)) {
-    dZ = ncol(covs)
+    covs.names = colnames(covs)
+    if (is.null(covs.names)) {
+      covs.names = paste("z",1:ncol(covs),sep="")
+      colnames(covs) = covs.names
+    }
+    covs = covs[,order(nchar(covs.names))]
+    covs = as.matrix(covs)
+    dZ = length(covs.names)
     covs.check = covs_drop_fun(covs)
     if (covs.check$ncovs < dZ & covs_drop==FALSE) {
       print("Multicollinearity issue detected in covs. Please rescale and/or remove redundant covariates, or use covs_drop option.")  
     }
     if (covs.check$ncovs < dZ & isTRUE(covs_drop)) {
-      covs  <- covs.check$covs
-      dZ <- covs.check$ncovs
-      covs_drop_coll <-1
-      print("Multicollinearity issue detected in covs. Redundant covariates dropped.")  
+      covs  <- as.matrix(covs.check$covs)
+      dZ    <- covs.check$ncovs
+      #covs_drop_coll <-1
+      #print("Multicollinearity issue detected in covs. Redundant covariates dropped.")  
     }
   }
 
@@ -172,7 +180,7 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
   
   if (N<20){
 			print("Not enough observations to perform bandwidth calculations. Estimates computed using entire sample")
-      h = b = max(N_l,N_r)
+      h = b = max(range_l,range_r)
 			bwselect = "Manual"
 			}
   
@@ -222,10 +230,12 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
     #print("Preparing data.") 
     
     if (is.null(h)) {
-      invisible(capture.output( rdbws<- rdbwselect(y=y, x=x, c=c, fuzzy=fuzzy,  deriv=deriv, p=p, q=q, covs=covs, 
+      invisible(capture.output( rdbws<- rdbwselect(y=y, x=x, c=c, fuzzy=fuzzy,  deriv=deriv, p=p, q=q, 
+                                                   covs=covs, covs_drop=TRUE,
                        kernel=kernel,  weights=weights, bwselect=bwselect,  bwcheck = bwcheck, bwrestrict=bwrestrict,
                        vce=vce, cluster=cluster,  nnmatch=nnmatch,  scaleregul=scaleregul,
-                       sharpbw = sharpbw, subset=subset, masspoints=masspoints, stdvars=stdvars)))
+                       sharpbw = sharpbw, subset=subset, all=FALSE, masspoints=masspoints, stdvars=stdvars, prchk=FALSE)))
+      
       h_l = c(rdbws$bws[1]); b_l = c(rdbws$bws[3])
       h_r = c(rdbws$bws[2]); b_r = c(rdbws$bws[4])
       
@@ -317,7 +327,7 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
   Q_q_r = t(t(R_p_r*W_h_r) - h_r^(p+1)*(L_r%*%t(e_p1))%*%t(t(invG_q_r%*%t(R_q_r))*W_b_r))
   D_l = eY_l; D_r = eY_r
   eC_l=eC_r=eT_l=eT_r=eZ_l=eZ_r=NULL
-  dZ = dT =g_l=g_r= 0
+  dT =g_l=g_r= 0
   
   if (!is.null(fuzzy)) {
     dT=1
@@ -327,7 +337,6 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
   }
   
   if (!is.null(covs)) {
-    dZ = ncol(covs)
     Z_l  = covs[x<c,,drop=FALSE];	  eZ_l = Z_l[ind_l,,drop=FALSE]
     Z_r  = covs[x>=c,,drop=FALSE];	eZ_r = Z_r[ind_r,,drop=FALSE]
     D_l  = cbind(D_l,eZ_l); D_r = cbind(D_r,eZ_r)
@@ -388,9 +397,9 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
     ZWY_p_r = ZWD_p_r[,1:(1+dT)] - UiGU_p_r[,1:(1+dT)]     
     ZWZ_p = ZWZ_p_r + ZWZ_p_l
     ZWY_p = ZWY_p_r + ZWY_p_l
-    gamma_p = chol2inv(chol(ZWZ_p))%*%ZWY_p
+    if (covs_drop_coll == 0) gamma_p = chol2inv(chol(ZWZ_p))%*%ZWY_p
+    if (covs_drop_coll == 1) gamma_p = ginv(ZWZ_p)%*%ZWY_p
     s_Y = c(1 ,  -gamma_p[,1])
-    
     
     if (is.null(fuzzy)) {
         tau_cl = scalepar*t(s_Y)%*%beta_p[(deriv+1),]
