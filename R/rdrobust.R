@@ -534,7 +534,7 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
   Estimate[1,] <- c(tau_cl,tau_bc, se_tau_cl, se_tau_rb) 
 
   out=list(Estimate=Estimate, bws=bws, coef=coef, se=se, z=z, pv=pv, ci=ci,
-           beta_p_l=beta_p_l, beta_p_r=beta_p_r,
+           beta_p_l=beta_p_l[,1], beta_p_r=beta_p_r[,1],
            V_cl_l=V_Y_cl_l, V_cl_r=V_Y_cl_r, V_rb_l=V_Y_rb_l, V_rb_r=V_Y_rb_r,
            N=c(N_l,N_r), N_h=c(N_h_l,N_h_r), N_b=c(N_b_l,N_b_r), M=c(M_l,M_r),
            tau_cl=c(tau_Y_cl_l,tau_Y_cl_r), tau_bc=c(tau_Y_bc_l,tau_Y_bc_r),

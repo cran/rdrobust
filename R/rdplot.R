@@ -70,7 +70,7 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
       h_r = h[2]
     }
   }
-  k=4
+  
   
   flag_no_ci <- FALSE
   if (is.null(ci)) {
@@ -194,8 +194,8 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 	invG_p_l  = qrXXinv((sqrt(W_h_l)*R_p_l));	invG_p_r  = qrXXinv((sqrt(W_h_r)*R_p_r))
 	
 	if (is.null(covs)) {
-	  gamma_p1_l = qrXXinv((sqrt(W_h_l)*R_p_l))%*%crossprod(R_p_l*W_h_l, y_l)	
-    gamma_p1_r = qrXXinv((sqrt(W_h_r)*R_p_r))%*%crossprod(R_p_r*W_h_r, y_r)
+	  gamma_p1_l = invG_p_l%*%crossprod(R_p_l*W_h_l, y_l)	
+    gamma_p1_r = invG_p_r%*%crossprod(R_p_r*W_h_r, y_r)
   } else {
 	  z_l  = covs[x<c,]; z_r  = covs[x>=c,]	
 	  D_l  = cbind(y_l,z_l); D_r = cbind(y_r,z_r)
@@ -214,6 +214,8 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 	  ZWZ_p = ZWZ_p_r + ZWZ_p_l
 	  ZWY_p = ZWY_p_r + ZWY_p_l
 	  gamma_p = chol2inv(chol(ZWZ_p))%*%ZWY_p
+	  if (covs_drop_coll == 0) gamma_p = chol2inv(chol(ZWZ_p))%*%ZWY_p
+	  if (covs_drop_coll == 1) gamma_p = ginv(ZWZ_p)%*%ZWY_p
 	  s_Y = c(1 ,  -gamma_p[,1])
 	  
 	  gamma_p1_l = t(s_Y%*%t(beta_p_l))
@@ -245,18 +247,46 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
   ###############################################
   ### Optimal Bins (using polynomial order k) ###
 	###############################################
+	k=4
   rk_l = matrix(NA,n_l,(k+1))
   rk_r = matrix(NA,n_r,(k+1))
-  
   for (j in 1:(k+1)) {
     rk_l[,j] = x_l^(j-1)
     rk_r[,j] = x_r^(j-1)
   }
   
-  gamma_k1_l = qrXXinv(rk_l)%*%crossprod(rk_l, y_l)  
-  gamma_k2_l = qrXXinv(rk_l)%*%crossprod(rk_l, y_l^2)
-  gamma_k1_r = qrXXinv(rk_r)%*%crossprod(rk_r, y_r)  
-  gamma_k2_r = qrXXinv(rk_r)%*%crossprod(rk_r, y_r^2)
+  invG_k_l = try(qrXXinv(rk_l),silent=TRUE)
+  invG_k_r = try(qrXXinv(rk_r),silent=TRUE)
+  
+  if (class(invG_k_l)[1] == "try-error" | class(invG_k_r)[1] == "try-error") {
+    k = 3
+    rk_l = matrix(NA,n_l,(k+1))
+    rk_r = matrix(NA,n_r,(k+1))
+    for (j in 1:(k+1)) {
+      rk_l[,j] = x_l^(j-1)
+      rk_r[,j] = x_r^(j-1)
+    }
+    invG_k_l = try(qrXXinv(rk_l),silent=TRUE)
+    invG_k_r = try(qrXXinv(rk_r),silent=TRUE)		
+  }
+  
+  if (class(invG_k_l)[1] == "try-error" | class(invG_k_r)[1] == "try-error") {
+    k = 2
+    rk_l = matrix(NA,n_l,(k+1))
+    rk_r = matrix(NA,n_r,(k+1))
+    for (j in 1:(k+1)) {
+      rk_l[,j] = x_l^(j-1)
+      rk_r[,j] = x_r^(j-1)
+    }
+    invG_k_l = qrXXinv(rk_l)
+    invG_k_r = qrXXinv(rk_r)		
+  }
+  
+  gamma_k1_l = invG_k_l%*%crossprod(rk_l, y_l)  
+  gamma_k2_l = invG_k_l%*%crossprod(rk_l, y_l^2)
+  gamma_k1_r = invG_k_r%*%crossprod(rk_r, y_r)  
+  gamma_k2_r = invG_k_r%*%crossprod(rk_r, y_r^2)
+  
   
   ### Bias w/sample
   mu0_k1_l = rk_l%*%gamma_k1_l
@@ -286,11 +316,13 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
   drk_i_r = matrix(NA,n_r-1,k);	rk_i_r  = matrix(NA,n_r-1,(k+1))
                        
   for (j in 1:(k+1)) {
-    rk_i_l[,j] = x_bar_i_l^(j-1);    rk_i_r[,j] = x_bar_i_r^(j-1)
+    rk_i_l[,j] = x_bar_i_l^(j-1)    
+    rk_i_r[,j] = x_bar_i_r^(j-1)
   }
                        
   for (j in 1:k) {
-    drk_i_l[,j] = j*x_bar_i_l^(j-1);    drk_i_r[,j] = j*x_bar_i_r^(j-1)
+    drk_i_l[,j] = j*x_bar_i_l^(j-1)
+    drk_i_r[,j] = j*x_bar_i_r^(j-1)
   }
   
   mu1_i_hat_l = drk_i_l%*%(gamma_k1_l[2:(k+1)])
