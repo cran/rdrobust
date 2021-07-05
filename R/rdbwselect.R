@@ -498,15 +498,15 @@ if (all=="FALSE"){
 
 print.rdbwselect <- function(x,...){
   cat("Call: rdbwselect\n\n")
-  cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1]+x$N[2], width=10, justify="right"),"\n", sep=""))
   cat(paste("BW type                  ",  format(x$bwselect, width=10, justify="right"),"\n", sep=""))
   cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
   cat(paste("VCE method               ",  format(x$vce,      width=10, justify="right"),"\n", sep=""))
   cat("\n")
-  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("Order bias  (q)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
-  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ",  format(sprintf("%9.0f",x$M[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$M[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1], width=10, justify="right"),  "   ", format(x$N[2], width=10, justify="right"),        "\n", sep=""))
+  cat(paste("Order est. (p)           ",  format(x$p,    width=10, justify="right"),  "   ", format(x$p,    width=10, justify="right"),       "\n", sep=""))
+  cat(paste("Order bias  (q)          ",  format(x$q,    width=10, justify="right"),  "   ", format(x$q,    width=10, justify="right"),       "\n", sep=""))
+  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ", format(x$M[1], width=10, justify="right"), "   ", format(x$M[2],width=10, justify="right"),        "\n", sep=""))
   cat("\n")
 }
 
@@ -516,15 +516,15 @@ summary.rdbwselect <- function(object,...) {
   
   cat("Call: rdbwselect\n\n")
   
-  cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1]+x$N[2], width=10, justify="right"),"\n", sep=""))
   cat(paste("BW type                  ",  format(x$bwselect, width=10, justify="right"),"\n", sep=""))
   cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
   cat(paste("VCE method               ",  format(x$vce,      width=10, justify="right"),"\n", sep=""))
   cat("\n")
-  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("Order bias  (q)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
-  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ",  format(sprintf("%9.0f",x$M[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$M[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1], width=10, justify="right"),  "   ", format(x$N[2], width=10, justify="right"),        "\n", sep=""))
+  cat(paste("Order est. (p)           ",  format(x$p,    width=10, justify="right"),  "   ", format(x$p,    width=10, justify="right"),       "\n", sep=""))
+  cat(paste("Order bias  (q)          ",  format(x$q,    width=10, justify="right"),  "   ", format(x$q,    width=10, justify="right"),       "\n", sep=""))
+  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ", format(x$M[1], width=10, justify="right"), "   ", format(x$M[2],width=10, justify="right"),        "\n", sep=""))
   cat("\n")
   
   

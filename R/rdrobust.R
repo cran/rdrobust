@@ -231,7 +231,7 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
     
     if (is.null(h)) {
       invisible(capture.output( rdbws<- rdbwselect(y=y, x=x, c=c, fuzzy=fuzzy,  deriv=deriv, p=p, q=q, 
-                                                   covs=covs, covs_drop=TRUE,
+                                                   covs=covs, covs_drop=covs_drop,
                        kernel=kernel,  weights=weights, bwselect=bwselect,  bwcheck = bwcheck, bwrestrict=bwrestrict,
                        vce=vce, cluster=cluster,  nnmatch=nnmatch,  scaleregul=scaleregul,
                        sharpbw = sharpbw, subset=subset, all=FALSE, masspoints=masspoints, stdvars=stdvars, prchk=FALSE)))
@@ -548,21 +548,20 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
 
 print.rdrobust <- function(x,...){
   cat("Call: rdrobust\n\n")
-  cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1]+x$N[2], width=10, justify="right"),"\n", sep=""))
   cat(paste("BW type                  ",  format(x$bwselect, width=10, justify="right"),"\n", sep=""))
   cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
   cat(paste("VCE method               ",  format(x$vce,      width=10, justify="right"),"\n", sep=""))
   cat("\n")
-  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$N_h[1],width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N_h[2],width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("Order bias  (q)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("BW est. (h)              ",  format(sprintf("%9.3f",x$bws[1,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2],  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("BW bias (b)              ",  format(sprintf("%9.3f",x$bws[2,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("rho (h/b)                ",  format(sprintf("%9.3f",x$bws[1,1]/x$bws[2,1],width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2]/x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
-  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ",  format(sprintf("%9.0f",x$M[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$M[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1],  width=10, justify="right"),  "   ", format(x$N[2],   width=10, justify="right"),       "\n", sep=""))
+  cat(paste("Eff. Number of Obs.      ",  format(x$N_h[1],width=10, justify="right"),  "   ", format(x$N_h[2], width=10, justify="right"),       "\n", sep=""))
+  cat(paste("Order est. (p)           ",  format(x$p,     width=10, justify="right"),  "   ", format(x$p,      width=10, justify="right"),       "\n", sep=""))
+  cat(paste("Order bias  (q)          ",  format(x$q,     width=10, justify="right"),  "   ", format(x$q,      width=10, justify="right"),       "\n", sep=""))
+  cat(paste("BW est. (h)              ",  format(sprintf("%10.3f",x$bws[1,1])),         "   ", format(sprintf("%10.3f",x$bws[1,2])),       "\n", sep=""))
+  cat(paste("BW bias (b)              ",  format(sprintf("%10.3f",x$bws[2,1])),         "   ", format(sprintf("%10.3f",x$bws[2,2])),       "\n", sep=""))
+  cat(paste("rho (h/b)                ",  format(sprintf("%10.3f",x$bws[1,1]/x$bws[2,1])),  "   ", format(sprintf("%10.3f",x$bws[1,2]/x$bws[2,2])),       "\n", sep=""))
+  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ",  format(x$M[1], width=10, justify="right"), "   ", format(x$M[2],width=10, justify="right"),        "\n", sep=""))
   cat("\n")
-  #cat(paste(format(sprintf("%9.3f",x$bws,"\n", sep="")))) 
 }
 
 summary.rdrobust <- function(object,...) {
@@ -571,19 +570,19 @@ summary.rdrobust <- function(object,...) {
   #if (is.null(args[['level']])) { level <- 0.05 } else { level <- args[['level']] }
 
   cat("Call: rdrobust\n\n")
-  cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1]+x$N[2], width=10, justify="right"),"\n", sep=""))
   cat(paste("BW type                  ",  format(x$bwselect, width=10, justify="right"),"\n", sep=""))
   cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
   cat(paste("VCE method               ",  format(x$vce,      width=10, justify="right"),"\n", sep=""))
   cat("\n")
-  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1], width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$N[2],width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$N_h[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$N_h[2],width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Order est. (p)           ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$p,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("Order bias  (q)          ",  format(sprintf("%9.0f",x$q,    width=10, justify="right")),  "   ", format(sprintf("%9.0f",x$q,  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("BW est. (h)              ",  format(sprintf("%9.3f",x$bws[1,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2],  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("BW bias (b)              ",  format(sprintf("%9.3f",x$bws[2,1], width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
-  cat(paste("rho (h/b)                ",  format(sprintf("%9.3f",x$bws[1,1]/x$bws[2,1],    width=10, justify="right")),  "   ", format(sprintf("%9.3f",x$bws[1,2]/x$bws[2,2],  width=10, justify="right")),       "\n", sep=""))
-  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ",  format(sprintf("%9.0f",x$M[1], width=10, justify="right")), "   ", format(sprintf("%9.0f",x$M[2],width=10, justify="right")),        "\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1],   width=10, justify="right"),  "   ", format(x$N[2],   width=10, justify="right"),       "\n", sep=""))
+  cat(paste("Eff. Number of Obs.      ",  format(x$N_h[1], width=10, justify="right"),  "   ", format(x$N_h[2], width=10, justify="right"),       "\n", sep=""))
+  cat(paste("Order est. (p)           ",  format(x$p,      width=10, justify="right"),  "   ", format(x$p,      width=10, justify="right"),       "\n", sep=""))
+  cat(paste("Order bias  (q)          ",  format(x$q,      width=10, justify="right"),  "   ", format(x$q,      width=10, justify="right"),       "\n", sep=""))
+  cat(paste("BW est. (h)              ",  format(sprintf("%10.3f",x$bws[1,1])),  "   ", format(sprintf("%10.3f",x$bws[1,2])),      "\n", sep=""))
+  cat(paste("BW bias (b)              ",  format(sprintf("%10.3f",x$bws[2,1])),  "   ", format(sprintf("%10.3f",x$bws[2,2])),      "\n", sep=""))
+  cat(paste("rho (h/b)                ",  format(sprintf("%10.3f",x$bws[1,1]/x$bws[2,1])),  "   ", format(sprintf("%10.3f",x$bws[1,2]/x$bws[2,2])),       "\n", sep=""))
+  if (x$masspoints=="adjust" | x$masspoints=="check") cat(paste("Unique Obs.              ",  format(x$M[1], width=10, justify="right"), "   ", format(x$M[2],width=10, justify="right"),        "\n", sep=""))
   cat("\n")
 
   ### compute CI

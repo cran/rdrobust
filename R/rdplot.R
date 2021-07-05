@@ -213,7 +213,6 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 	  ZWY_p_r = ZWD_p_r[,1] - UiGU_p_r[,1]     
 	  ZWZ_p = ZWZ_p_r + ZWZ_p_l
 	  ZWY_p = ZWY_p_r + ZWY_p_l
-	  gamma_p = chol2inv(chol(ZWZ_p))%*%ZWY_p
 	  if (covs_drop_coll == 0) gamma_p = chol2inv(chol(ZWZ_p))%*%ZWY_p
 	  if (covs_drop_coll == 1) gamma_p = ginv(ZWZ_p)%*%ZWY_p
 	  s_Y = c(1 ,  -gamma_p[,1])
@@ -591,14 +590,14 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 print.rdplot <- function(x,...){
   cat("Call: rdplot\n\n")
   
-  cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
-  cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1]+x$N[2], width=10, justify="right"),"\n", sep=""))
+  cat(paste("Kernel                   ",  format(x$kernel,      width=10, justify="right"),"\n", sep=""))
   cat("\n")
-  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1],     width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$N[2],     width=10, justify="right")), "\n", sep=""))
-  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$N_h[1],    width=10, justify="right")),  "     ", format(sprintf("%9.0f",x$N_h[2],   width=10, justify="right")), "\n", sep=""))
-  cat(paste("Order poly. fit (p)      ",  format(sprintf("%9.0f",x$p,        width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$p,        width=10, justify="right")), "\n", sep=""))
-  cat(paste("BW poly. fit (h)         ",  format(sprintf("%9.3f",x$h[1],     width=10, justify="right")),  "      ", format(sprintf("%9.3f",x$h[2],     width=10, justify="right")), "\n", sep=""))
-  cat(paste("Number of bins scale     ",  format(sprintf("%9.0f",x$scale[1], width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$scale[2], width=10, justify="right")), "\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1],    width=10, justify="right"),  "      ", format(x$N[2],     width=10, justify="right"), "\n", sep=""))
+  cat(paste("Eff. Number of Obs.      ",  format(x$N_h[1],  width=10, justify="right"),  "      ", format(x$N_h[2],   width=10, justify="right"), "\n", sep=""))
+  cat(paste("Order poly. fit (p)      ",  format(x$p,       width=10, justify="right"),  "      ", format(x$p,        width=10, justify="right"), "\n", sep=""))
+  cat(paste("BW poly. fit (h)         ",  format(sprintf("%10.3f",x$h[1])),      "      ", format(sprintf("%10.3f",x$h[2])),     "\n", sep=""))
+  cat(paste("Number of bins scale     ",  format(sprintf("%10.3f",x$scale[1])),  "      ", format(sprintf("%10.3f",x$scale[2])), "\n", sep=""))
   cat("\n")
 }
 
@@ -608,25 +607,25 @@ summary.rdplot <- function(object,...) {
   
   cat("Call: rdplot\n\n")
   
-  cat(paste("Number of Obs.           ",  format(sprintf("%10.0f",x$N[1]+x$N[2], width=10, justify="right")),"\n", sep=""))
-  cat(paste("Kernel                   ",  format(x$kernel,   width=10, justify="right"),"\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1]+x$N[2], width=10, justify="right"),"\n", sep=""))
+  cat(paste("Kernel                   ",  format(x$kernel,      width=10, justify="right"),"\n", sep=""))
   cat("\n")
-  cat(paste("Number of Obs.           ",  format(sprintf("%9.0f",x$N[1],     width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$N[2],     width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Eff. Number of Obs.      ",  format(sprintf("%9.0f",x$N_h[1],   width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$N_h[2],   width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Order poly. fit (p)      ",  format(sprintf("%9.0f",x$p,    width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$p,    width=10, justify="right")),       "\n", sep=""))
-  cat(paste("BW poly. fit (h)         ",  format(sprintf("%9.3f",x$h[1], width=10, justify="right")),  "      ", format(sprintf("%9.3f",x$h[2],  width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Number of bins scale     ",  format(sprintf("%9.0f",x$scale[1], width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$scale[2], width=10, justify="right")),    "\n", sep=""))
+  cat(paste("Number of Obs.           ",  format(x$N[1],     width=10, justify="right"),  "      ", format(x$N[2],     width=10, justify="right"),        "\n", sep=""))
+  cat(paste("Eff. Number of Obs.      ",  format(x$N_h[1],   width=10, justify="right"),  "      ", format(x$N_h[2],   width=10, justify="right"),        "\n", sep=""))
+  cat(paste("Order poly. fit (p)      ",  format(x$p,        width=10, justify="right"),  "      ", format(x$p,        width=10, justify="right"),       "\n", sep=""))
+  cat(paste("BW poly. fit (h)         ",  format(sprintf("%10.3f",x$h[1])),      "      ", format(sprintf("%10.3f",x$h[2])),        "\n", sep=""))
+  cat(paste("Number of bins scale     ",  format(sprintf("%10.0f",x$scale[1])),  "      ", format(sprintf("%10.0f",x$scale[2])),    "\n", sep=""))
   cat("\n")
-  cat(paste("Bins Selected            ",  format(sprintf("%9.0f",x$J[1],       width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$J[2], width=10, justify="right")),        "\n", sep=""))
-  cat(paste("Average Bin Length       ",  format(sprintf("%9.3f",x$bin_avg[1], width=10, justify="right")),  "      ", format(sprintf("%9.3f",x$bin_avg[2], width=10, justify="right")),  "\n", sep=""))
-  cat(paste("Median Bin Length        ",  format(sprintf("%9.3f",x$bin_med[1], width=10, justify="right")),  "      ", format(sprintf("%9.3f",x$bin_med[2], width=10, justify="right")),  "\n", sep=""))
+  cat(paste("Bins Selected            ",  format(x$J[1],       width=10, justify="right"),  "      ", format(x$J[2], width=10, justify="right"),        "\n", sep=""))
+  cat(paste("Average Bin Length       ",  format(sprintf("%10.3f",x$bin_avg[1])),  "      ", format(sprintf("%10.3f",x$bin_avg[2])),  "\n", sep=""))
+  cat(paste("Median Bin Length        ",  format(sprintf("%10.3f",x$bin_med[1])),  "      ", format(sprintf("%10.3f",x$bin_med[2])),  "\n", sep=""))
   cat("\n")
-  cat(paste("IMSE-optimal bins        ",  format(sprintf("%9.0f",x$J_IMSE[1], width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$J_IMSE[2], width=10, justify="right")),   "\n", sep=""))
-  cat(paste("Mimicking Variance bins  ",  format(sprintf("%9.0f",x$J_MV[1],   width=10, justify="right")),  "      ", format(sprintf("%9.0f",x$J_MV[2], width=10, justify="right")),     "\n", sep=""))
+  cat(paste("IMSE-optimal bins        ",  format(x$J_IMSE[1], width=10, justify="right"),  "      ", format(x$J_IMSE[2], width=10, justify="right"),  "\n", sep=""))
+  cat(paste("Mimicking Variance bins  ",  format(x$J_MV[1],   width=10, justify="right"),  "      ", format(x$J_MV[2],   width=10, justify="right"),  "\n", sep=""))
   cat("\n")
   cat(paste("Relative to IMSE-optimal:",   "\n", sep=""))
-  cat(paste("Implied scale            ",  format(sprintf("%9.3f",x$rscale[1], width=10, justify="right")),  "      ", format(sprintf("%9.3f",x$rscale[2], width=10, justify="right")),   "\n", sep=""))
-  cat(paste("WIMSE variance weight    ",  format(sprintf("%9.3f",1/(1+x$rscale[1]^3), width=10, justify="right")),  "      ", format(sprintf("%9.3f",1/(1+x$rscale[2]^3), width=10, justify="right")),   "\n", sep=""))
-  cat(paste("WIMSE bias weight        ",  format(sprintf("%9.3f",x$rscale[1]^3/(1+x$rscale[1]^3), width=10, justify="right")),  "      ", format(sprintf("%9.3f",x$rscale[2]^3/(1+x$rscale[2]^3), width=10, justify="right")),   "\n", sep=""))
+  cat(paste("Implied scale            ",  format(sprintf("%10.3f",x$rscale[1])),                      "      ", format(sprintf("%10.3f",x$rscale[2])),                      "\n", sep=""))
+  cat(paste("WIMSE variance weight    ",  format(sprintf("%10.3f",1/(1+x$rscale[1]^3))),              "      ", format(sprintf("%10.3f",1/(1+x$rscale[2]^3))),              "\n", sep=""))
+  cat(paste("WIMSE bias weight        ",  format(sprintf("%10.3f",x$rscale[1]^3/(1+x$rscale[1]^3))),  "      ", format(sprintf("%10.3f",x$rscale[2]^3/(1+x$rscale[2]^3))),  "\n", sep=""))
   cat("\n")
   }
