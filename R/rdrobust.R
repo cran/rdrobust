@@ -1,6 +1,6 @@
 rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,  
                     p = NULL, q = NULL, h = NULL, b = NULL, rho = NULL, 
-                    covs = NULL, covs_drop = TRUE,
+                    covs = NULL, covs_drop = TRUE, ginv.tol = 1e-20,
                     kernel = "tri", weights = NULL, bwselect = "mserd",
                     vce = "nn", cluster = NULL, nnmatch = 3, level = 95, 
                     scalepar = 1, scaleregul = 1, sharpbw = FALSE, 
@@ -398,7 +398,7 @@ rdrobust = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL,
     ZWZ_p = ZWZ_p_r + ZWZ_p_l
     ZWY_p = ZWY_p_r + ZWY_p_l
     if (covs_drop_coll == 0) gamma_p = chol2inv(chol(ZWZ_p))%*%ZWY_p
-    if (covs_drop_coll == 1) gamma_p = ginv(ZWZ_p)%*%ZWY_p
+    if (covs_drop_coll == 1) gamma_p = ginv(ZWZ_p, tol = ginv.tol)%*%ZWY_p
     s_Y = c(1 ,  -gamma_p[,1])
     
     if (is.null(fuzzy)) {

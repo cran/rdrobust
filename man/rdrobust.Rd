@@ -16,7 +16,8 @@ For more details, and related Stata and R packages useful for analysis of RD des
 }
 \usage{rdrobust(y, x, c = NULL,  fuzzy = NULL, 
           deriv = NULL, p = NULL, q = NULL, 
-          h = NULL, b = NULL, rho = NULL, covs = NULL,  covs_drop = TRUE,
+          h = NULL, b = NULL, rho = NULL, 
+          covs = NULL,  covs_drop = TRUE, ginv.tol = 1e-20,
           kernel = "tri", weights = NULL, bwselect = "mserd", 
           vce = "nn", cluster = NULL, 
           nnmatch = 3, level = 95, scalepar = 1, scaleregul = 1, 
@@ -36,6 +37,7 @@ For more details, and related Stata and R packages useful for analysis of RD des
   \item{rho}{specifies the value of \code{rho}, so that the bias bandwidth \code{b} equals \code{h/rho}. Default is \code{rho = 1} if \code{h} is specified but \code{b} is not.}
   \item{covs}{specifies additional covariates to be used for estimation and inference.}
   \item{covs_drop}{if TRUE, it checks for collinear additional covariates and drops them. Default is TRUE.}
+  \item{ginv.tol}{tolerance used to invert matrices involving covariates when \code{covs_drop=TRUE}.}
   \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
   \item{weights}{is the variable used for optional weighting of the estimation procedure. The unit-specific weights multiply the kernel function.}
 

@@ -1,6 +1,6 @@
 rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL, 
                   kernel = "uni", weights = NULL, h = NULL, 
-                  covs = NULL,  covs_eval = "mean", covs_drop = TRUE,
+                  covs = NULL,  covs_eval = "mean", covs_drop = TRUE, ginv.tol = 1e-20,
                   support = NULL, subset = NULL, masspoints = "adjust",
                   hide = FALSE, ci = NULL, shade = FALSE, 
                   title = NULL, x.label = NULL, y.label = NULL, x.lim = NULL, y.lim = NULL, 
@@ -214,7 +214,7 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
 	  ZWZ_p = ZWZ_p_r + ZWZ_p_l
 	  ZWY_p = ZWY_p_r + ZWY_p_l
 	  if (covs_drop_coll == 0) gamma_p = chol2inv(chol(ZWZ_p))%*%ZWY_p
-	  if (covs_drop_coll == 1) gamma_p = ginv(ZWZ_p)%*%ZWY_p
+	  if (covs_drop_coll == 1) gamma_p = ginv(ZWZ_p, tol = ginv.tol)%*%ZWY_p
 	  s_Y = c(1 ,  -gamma_p[,1])
 	  
 	  gamma_p1_l = t(s_Y%*%t(beta_p_l))
