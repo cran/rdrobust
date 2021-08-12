@@ -343,14 +343,26 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
   mu1_i_hat_l = drk_i_l%*%(gamma_k1_l[2:(k+1)])
   mu1_i_hat_r = drk_i_r%*%(gamma_k1_r[2:(k+1)])
   
-  sigma2_hat_l_bar = mu2_i_hat_l - mu0_i_hat_l^2
-  sigma2_hat_r_bar = mu2_i_hat_r - mu0_i_hat_r^2
-  sigma2_hat_l = mu2_hat_l - mu0_hat_l^2
-  sigma2_hat_r = mu2_hat_r - mu0_hat_r^2
-  
-  J.fun = function(B,V) {ceiling((((2*B)/V)*n)^(1/3))}
   var_y_l = var(y_l)
   var_y_r = var(y_r)
+  
+  sigma2_hat_l_bar = mu2_i_hat_l - mu0_i_hat_l^2
+  sigma2_hat_r_bar = mu2_i_hat_r - mu0_i_hat_r^2
+  ind_s2_l = sigma2_hat_l_bar<0
+  ind_s2_r = sigma2_hat_r_bar<0
+  sigma2_hat_l_bar[ind_s2_l] = var_y_l 
+  sigma2_hat_r_bar[ind_s2_r] = var_y_r  
+  
+  sigma2_hat_l = mu2_hat_l - mu0_hat_l^2
+  sigma2_hat_r = mu2_hat_r - mu0_hat_r^2
+  ind_s2_l = sigma2_hat_l<0
+  ind_s2_r = sigma2_hat_r<0
+  sigma2_hat_l[ind_s2_l] = var_y_l 
+  sigma2_hat_r[ind_s2_r] = var_y_r  
+  
+  
+  J.fun = function(B,V) {ceiling((((2*B)/V)*n)^(1/3))}
+
   
   B_es_hat_dw = c( ((c-x_min)^2/(12*n))*sum(mu1_hat_l^2),((x_max-c)^2/(12*n))*sum(mu1_hat_r^2))
   V_es_hat_dw = c((0.5/(c-x_min))*sum(dxi_l*dyi_l^2),(0.5/(x_max-c))*sum(dxi_r*dyi_r^2))
