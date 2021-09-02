@@ -67,7 +67,7 @@ rdbwselect = function(y, x, c = NULL, fuzzy = NULL, deriv = NULL, p = NULL, q = 
   
   if (!is.null(weights)){
     if (!is.null(subset)) weights <- weights[subset]
-    na.ok <- na.ok & complete.cases(weights)
+    na.ok <- na.ok & complete.cases(weights) & weights>=0
   } 
   
   x = as.matrix(x[na.ok])

@@ -17,11 +17,17 @@ rdplot = function(y, x, c=0, p=4, nbins = NULL, binselect = "esmv", scale = NULL
     na.ok <- na.ok & complete.cases(covs)
   } 
   
+  if (!is.null(weights)){
+    if (!is.null(subset)) weights <- weights[subset]
+    na.ok <- na.ok & complete.cases(weights) & weights>=0
+  } 
+  
   
   x <- x[na.ok]
   y <- y[na.ok]
   
   if (!is.null(covs))    covs    = as.matrix(covs)[na.ok, , drop = FALSE]
+  if (!is.null(weights)) weights = as.matrix(weights[na.ok])  
   
   x_min = min(x);	x_max = max(x)
 	x_l = x[x<c]; x_r = x[x>=c]	
