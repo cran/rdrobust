@@ -15,13 +15,13 @@ For more details, and related Stata and R packages useful for analysis of RD des
 }
 \usage{rdbwselect(y, x, c = NULL,  fuzzy = NULL, 
               deriv = NULL, p = NULL, q = NULL, 
-              covs = NULL, covs_drop = TRUE, ginv.tol = 1e-20,
+              covs = NULL, covs_drop = TRUE, ginv.tol = 1e-15,
               kernel = "tri", weights = NULL, bwselect = "mserd", 
               vce = "nn",  cluster = NULL, nnmatch = 3, 
               scaleregul = 1, sharpbw = FALSE, 
               all = NULL, subset = NULL, 
               masspoints = "adjust", bwcheck = NULL,
-              bwrestrict = TRUE, stdvars = FALSE, data = NULL)}
+              bwrestrict = TRUE, stdvars = TRUE, data = NULL)}
 \arguments{
   \item{y}{is the dependent variable.}
   \item{x}{is the running variable (a.k.a. score or forcing variable).}
@@ -37,7 +37,7 @@ For more details, and related Stata and R packages useful for analysis of RD des
     \item a numeric vector, matrix, or data frame: passed through unchanged (backwards compatible).
   }}
   \item{covs_drop}{if TRUE, it checks for collinear additional covariates and drops them. Default is TRUE.}
-    \item{ginv.tol}{tolerance used to invert matrices involving covariates when \code{covs_drop=TRUE}.}
+    \item{ginv.tol}{tolerance used to invert matrices involving covariates when \code{covs_drop=TRUE}: directions with singular value below \code{ginv.tol} times the largest are discarded. Default is \code{1e-15}; smaller values can invert numerical noise.}
   \item{kernel}{is the kernel function used to construct the local-polynomial estimator(s). Options are \code{triangular} (default option), \code{epanechnikov} and \code{uniform}.}
     \item{weights}{is the variable used for optional weighting of the estimation procedure. The unit-specific weights multiply the kernel function.}
 \item{bwselect}{specifies the bandwidth selection procedure to be used. Options are:
@@ -105,7 +105,7 @@ The CR2/CR3 leverage correction applies to both the conventional and the robust 
     \item{bwcheck}{if a positive integer is provided, the preliminary bandwidth used in the calculations is enlarged so that at least \code{bwcheck} unique observations are used.}
       \item{bwrestrict}{if \code{TRUE}, computed bandwidths are restricted to lie within the range of \code{x}; default is \code{bwrestrict = TRUE}.}
       
-      \item{stdvars}{if \code{TRUE}, \code{x} and \code{y} are standardized before computing the bandwidths; default is \code{stdvars = FALSE}.}
+      \item{stdvars}{if \code{TRUE}, \code{x} and \code{y} are standardized before computing the bandwidths. Standardization avoids numerical instability in bandwidth selection when the running variable has very large or very small magnitude; default is \code{stdvars = TRUE}.}
   \item{data}{an optional data frame. When supplied, \code{y}, \code{x}, \code{covs}, \code{cluster}, \code{fuzzy}, \code{weights}, and \code{subset} may be given as bare variable names referring to columns of \code{data}.}
 }
 \value{

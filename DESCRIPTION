@@ -2,8 +2,8 @@ Package: rdrobust
 Type: Package
 Title: Robust Data-Driven Statistical Inference in
         Regression-Discontinuity Designs
-Version: 4.0.0
-Date: 2026-05-15
+Version: 4.1.1
+Date: 2026-10-07
 Authors@R: c(person(given = c("Sebastian"),
                       family = "Calonico",
                       role = c("aut", "cre"),
@@ -27,14 +27,14 @@ License: GPL-3
 URL: https://github.com/rdpackages/rdrobust
 BugReports: https://github.com/rdpackages/rdrobust/issues
 Imports: ggplot2, MASS
-Suggests: broom, gridExtra, knitr, rmarkdown
-VignetteBuilder: knitr
+Suggests: broom, gridExtra, testthat (>= 3.0.0)
+Config/testthat/edition: 3
 NeedsCompilation: no
-Packaged: 2026-05-15 18:28:12 UTC; ncalonic
+Packaged: 2026-10-07 22:01:16 UTC; ncalonic
 Author: Sebastian Calonico [aut, cre],
   Matias D. Cattaneo [aut],
   Max H. Farrell [aut],
   Rocio Titiunik [aut]
 Maintainer: Sebastian Calonico <scalonico@ucdavis.edu>
 Repository: CRAN
-Date/Publication: 2026-05-16 08:10:02 UTC
+Date/Publication: 2026-10-07 23:20:02 UTC
